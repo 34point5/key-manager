@@ -6,7 +6,7 @@ import Crypto.Random as RND
 import hashlib as hl
 import os
 import random as rnd
-import string as str
+import string
 import tkinter as tk
 import tkinter.messagebox as mb
 
@@ -32,7 +32,7 @@ def genpass(n):
 		Generate a random password of the specified length.
 	'''
 
-	return ''.join(rnd.choice(2 * str.ascii_letters + str.digits + str.punctuation) for _ in range(n))
+	return ''.join(rnd.choice(2 * string.ascii_letters + string.digits + string.punctuation) for _ in range(n))
 
 ################################################################################
 
@@ -971,7 +971,7 @@ def handle_missing_files(hash_exists, keys_exists):
 	# at this point, 'keys.csv' exists and is empty
 	# if 'hash' is missing, create it with the default contents
 	if not hash_exists:
-		response = mb.askyesno('First Time User?', 'The file \'hash\' is missing. It is required to log in to the application. Do you want it to be created?', icon = 'warning')
+		response = mb.askyesno('First Time User?', 'The file \'hash\' is missing. It is required to log in to the application. It will be created with \'root\' as the default passphrase.', icon = 'warning')
 		if response == False:
 			raise SystemExit(0)
 		with open('hash', 'w') as hash_file:
@@ -979,6 +979,7 @@ def handle_missing_files(hash_exists, keys_exists):
 			print('The default passphrase is \'root\'.', file = hash_file)
 
 	# close the phantom window
+	root.quit()
 	root.destroy()
 
 ################################################################################
