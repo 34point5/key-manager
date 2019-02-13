@@ -10,14 +10,12 @@ import string
 import tkinter as tk
 import tkinter.messagebox as mb
 
-'''
-	Create a new directory (folder) in an easily accessible place on your computer.
-	Place this file in that location.
-	On the first run, 'keys.csv' and 'hash' will be created automatically.
-	'hash' stores the SHA-512 of your passphrase and a hint for the passphrase.
-	'keys.csv' stores the your passwords after they have been encrypted with AES256.
-	Do not, under any circumstances, modify 'hash' or 'keys.csv' by hand!
-'''
+# Create a new directory (folder) in an easily accessible place on your computer.
+# Place this file in that location.
+# On the first run, 'keys.csv' and 'hash' will be created automatically.
+# 'hash' stores the SHA-512 of your passphrase and a hint for the passphrase.
+# 'keys.csv' stores the your passwords after they have been encrypted with AES256.
+# Do not, under any circumstances, modify 'hash' or 'keys.csv' by hand!
 
 ################################################################################
 
@@ -67,10 +65,16 @@ def show_pass(entry_name):
 
 def encryptAES(plaintext, AES_key):
 	'''
-		Encrypt a given string using AES256.
-		Convert a plaintext string to base64 string ciphertext.
-		Ciphertext is encrypted data appended to initialization vector.
-		Ciphertext is a base64 string.
+	Encrypt a given string using AES256.
+	Before encrypting, plaintext string is converted to bytes.
+	After encrypting, bytes are converted back to string.
+
+	Args:
+		plaintext: string to be encrypted
+		AES_key: 256-bit encryption key
+
+	Returns:
+		base64-encoded ciphertext string
 	'''
 
 	initialization_vector = RND.new().read(AES.block_size);
@@ -79,12 +83,16 @@ def encryptAES(plaintext, AES_key):
 	ciphertext = base64.b64encode(composite).decode()
 	return ciphertext
 
+################################################################################
+
 def decryptAES(ciphertext, AES_key):
 	'''
-		Decrypt a given string using AES256.
-		Convert a base64 string ciphertext to a plaintext string.
-		Separate the initialization vector in the ciphertext.
-		Decrypt to get plaintext bytes, but return it as a string.
+	Decrypt a given string using AES256.
+	Before decrypting, ciphertext string is converted to bytes.
+	After decrypting, bytes are converted back to string.
+
+	Args:
+		ciphertext: string to be decrypted
 	'''
 
 	ciphertext = base64.b64decode(ciphertext.encode())
@@ -244,14 +252,14 @@ if __name__ == '__main__':
 	# root_BaseClass = BaseClass(root)
 	# root.mainloop()
 
-	# x = 'srbsedfvvgedvgdvfoemxpuifbhasch,widj'
-	# k = hl.sha256('avfegbsdvge'.encode()).digest()
-	# y = encryptAES(x, k)
-	# z = decryptAES(y, k)
-	# print(x)
-	# print(y)
-	# print(z)
-	# print(k)
+	x = 'srbsedfvvgedvgdvfoemxpuifbhasch,widj'
+	k = hl.sha256('avfegbsdvge'.encode()).digest()
+	y = encryptAES(x, k)
+	z = decryptAES(y, k)
+	print(x)
+	print(type(y))
+	print(z)
+	print(k)
 
 	cop = tk.Tk()
 	cop_Login = Login(cop)
