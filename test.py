@@ -252,14 +252,14 @@ if __name__ == '__main__':
 	# root_BaseClass = BaseClass(root)
 	# root.mainloop()
 
-	x = 'srbsedfvvgedvgdvfoemxpuifbhasch,widj'
-	k = hl.sha256('avfegbsdvge'.encode()).digest()
-	y = encryptAES(x, k)
-	z = decryptAES(y, k)
-	print(x)
-	print(type(y))
-	print(z)
-	print(k)
+	# x = 'srbsedfvvgedvgdvfoemxpuifbhasch,widj'
+	# k = hl.sha256('avfegbsdvge'.encode()).digest()
+	# y = encryptAES(x, k)
+	# z = decryptAES(y, k)
+	# print(x)
+	# print(y)
+	# print(z)
+	# print(k)
 
 	cop = tk.Tk()
 	cop_Login = Login(cop)
