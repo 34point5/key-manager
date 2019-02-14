@@ -453,6 +453,10 @@ class AddPassword(BaseWindowClass):
 		cp_entry = tk.Entry(parent, textvariable = self.cpvar, show = '*')
 		cp_entry.grid(row = 7, column = 1, padx = 30, pady = 15)
 
+		# add the password to the file
+		self.submit = tk.Button(parent, text = 'Add', height = 2, width = 20, command = lambda : self.validate_pw(acc_entry.get(), uid_entry.get(), name_entry.get(), pw_entry.get(), cp_entry.get()))
+		self.submit.grid(row = 8, columnspan = 2, padx = 30, pady = 30)
+
 		# auto-fill password entries
 		autofill_button = tk.Button(parent, text = 'Suggested Password', font = subtitlefont, command = self.set_passwords)
 		autofill_button.grid(row = 5, column = 0, padx = 30, pady = 15)
@@ -472,10 +476,6 @@ class AddPassword(BaseWindowClass):
 		cpass_button = tk.Button(parent, text = 'Confirm Password', font = subtitlefont, command = lambda : show_pass(cp_entry))
 		cpass_button.grid(row = 7, column = 0, padx = 30, pady = 15)
 		CreateTooltip(cpass_button, 'Show or hide password')
-
-		# add the password to the file
-		self.submit = tk.Button(parent, text = 'Add', height = 2, width = 20, command = lambda : self.validate_pw(acc_entry.get(), uid_entry.get(), name_entry.get(), pw_entry.get(), cp_entry.get()))
-		self.submit.grid(row = 8, columnspan = 2, padx = 30, pady = 30)
 
 	########################################
 
@@ -538,6 +538,104 @@ class AddPassword(BaseWindowClass):
 
 		self.parent.quit()
 		self.parent.destroy()
+
+################################################################################
+
+def change_passphrase(choose_window):
+	'''
+	Wrapper function to instantiate the ChangePassphrase class.
+
+	Args:
+		choose_window: the object whose window has to be hidden before displaying a new window
+
+	Returns:
+		None
+	'''
+
+	# hide the option choosing window
+	choose_window.parent.withdraw()
+
+	updater = tk.Toplevel(choose_window.parent)
+	updater_ChangePassphrase = ChangePassphrase(updater, choose_window.key)
+	updater.mainloop()
+	choose_window.key = updater_ChangePassphrase.key # set the updated AES_key
+
+	# unhide the option choosing window
+	choose_window.parent.deiconify()
+
+################################################################################
+
+class ChangePassphrase(BaseWindowClass):
+	'''
+	Change the passphrase that must be entered to log in.
+	The passwords have been encrypted using 'key', which is obtained from the passphrase.
+	Hence, if the passphrase is changed, 'key' will also change.
+	Therefore, after the passphrase is changed, decrypt the stored passwords using the old value of 'key'.
+	Then re-encrypt them using the new value of 'key'.
+	This new value of 'key' must be sent back to the main menu.
+	It is done using 'self.key' attribute.
+	'''
+
+	def __init__(self, parent, key):
+		super().__init__(parent)
+		parent.title('Change Passphrase')
+		self.key = key
+
+		# header
+		head_label = tk.Label(parent, text = 'Enter new Passphrase', font = titlefont)
+		head_label.grid(row = 0, columnspan = 2, padx = 30, pady = (30, 15))
+
+		# sub-header
+		subhead_label = tk.Label(parent, text = 'Use a long easy-to-remember passphrase.\nAvoid a short random one. Include special characters!')
+		subhead_label.grid(row = 1, columnspan = 2, padx = 30, pady = (0, 15))
+
+		# keyboard instruction
+		inst_label = tk.Label(parent, text = 'Press \'Esc\' to quit the application.')
+		inst_label.grid(row = 2, columnspan = 2, padx = 30, pady = (0, 30))
+
+		# passphrase hint prompt label
+		hint_label = tk.Label(parent, text = 'Passphrase Hint', font = subtitlefont)
+		hint_label.grid(row = 5, column = 0, padx = 30, pady = 15)
+
+		# passphrase prompt entry
+		pp_entry = tk.Entry(parent, show = '*')
+		pp_entry.grid(row = 3, column = 1, padx = 30, pady = 15)
+		pp_entry.focus()
+
+		# confirm passphrase prompt entry
+		cp_entry = tk.Entry(parent, show = '*')
+		cp_entry.grid(row = 4, column = 1, padx = 30, pady = 15)
+
+		# passphrase hint prompt entry
+		hint_entry = tk.Entry(parent)
+		hint_entry.grid(row = 5, column = 1, padx = 30, pady = 15)
+
+		# change the passphrase
+		self.submit = tk.Button(parent, text = 'Change', height = 2, width = 20, command = lambda : self.update_phrase(pp_entry.get(), cp_entry.get(), hint_entry.get()))
+		self.submit.grid(row = 6, columnspan = 2, padx = 30, pady = 30)
+
+		# toggle passphrase view
+		pp_button = tk.Button(parent, text = 'Passphrase', font = subtitlefont, command = lambda : show_pass(pp_entry))
+		pp_button.grid(row = 3, column = 0, padx = 30, pady = 15)
+		CreateTooltip(pp_button, 'Show or hide passphrase')
+
+		# toggle confirm passphrase view
+		cp_button = tk.Button(parent, text = 'Confirm Passphrase', font = subtitlefont, command = lambda : show_pass(cp_entry))
+		cp_button.grid(row = 4, column = 0, padx = 30, pady = 15)
+		CreateTooltip(cp_button, 'Show or hide passphrase')
+
+	########################################
+
+	def update_phrase(self, pp, cp, hint):
+		'''
+		Change the passphrase used for logins.
+		Calculate the SHA-512 of the new passphrase. Overwrite it onto 'hash'.
+		A passphrase hint is necessary to set a new passphrase.
+		'''
+
+		print('boobs')
+
+
 
 ################################################################################
 
