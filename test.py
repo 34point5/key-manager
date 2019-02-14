@@ -110,7 +110,7 @@ def decryptAES(ciphertext, AES_key):
 
 class CreateTooltip:
 	'''
-	Display a hint when the mouse hovers above a widget.
+	Display a hint when the mouse hovers over a widget.
 	'''
 
 	def __init__(self, widget, text = 'widget'):
@@ -220,12 +220,12 @@ class Login(BaseWindowClass):
 		parent.title('Log In')
 
 		# header
-		head = tk.Label(parent, text = 'Enter Passphrase', font = titlefont)
-		head.grid(row = 0, columnspan = 2, padx = 30, pady = (30, 15))
+		head_label = tk.Label(parent, text = 'Enter Passphrase', font = titlefont)
+		head_label.grid(row = 0, columnspan = 2, padx = 30, pady = (30, 15))
 
 		# keyboard instruction
-		inst = tk.Label(parent, text = 'Press \'Esc\' to quit the application.')
-		inst.grid(row = 1, columnspan = 2, padx = 30, pady = (0, 30))
+		inst_label = tk.Label(parent, text = 'Press \'Esc\' to quit the application.')
+		inst_label.grid(row = 1, columnspan = 2, padx = 30, pady = (0, 30))
 
 		# passphrase prompt entry
 		phrase_entry = tk.Entry(parent, show = '*')
@@ -317,12 +317,12 @@ class Choose(BaseWindowClass):
 		self.key = key
 
 		# header
-		head = tk.Label(parent, text = 'What would you like to do?', font = titlefont)
-		head.grid(row = 0, columnspan = 2, padx = 30, pady = (30, 15))
+		head_label = tk.Label(parent, text = 'What would you like to do?', font = titlefont)
+		head_label.grid(row = 0, columnspan = 2, padx = 30, pady = (30, 15))
 
 		# keyboard instruction
-		inst = tk.Label(parent, text = 'Press \'Esc\' to quit the application.')
-		inst.grid(row = 1, columnspan = 2, padx = 30, pady = (0, 30))
+		inst_label = tk.Label(parent, text = 'Press \'Esc\' to quit the application.')
+		inst_label.grid(row = 1, columnspan = 2, padx = 30, pady = (0, 30))
 
 		# add password
 		add_button = tk.Button(parent, text = 'Add a Password', height = 2, width = 20, command = lambda : add_password(self))
@@ -341,8 +341,8 @@ class Choose(BaseWindowClass):
 		view_button.grid(row = 3, column = 1, padx = 30, pady = 15)
 
 		# change passphrase button
-		cp_button = tk.Button(parent, text = 'Change Passphrase', height = 2, width = 20, command = lambda : change_passphrase(self))
-		cp_button.grid(row = 4, columnspan = 2, padx = 30, pady = (15, 30))
+		chp_button = tk.Button(parent, text = 'Change Passphrase', height = 2, width = 20, command = lambda : change_passphrase(self))
+		chp_button.grid(row = 4, columnspan = 2, padx = 30, pady = (15, 30))
 
 	########################################
 
@@ -354,10 +354,11 @@ class Choose(BaseWindowClass):
 	def press_enter(self, event = None):
 		'''
 		When the user presses 'Return', decide what action to perform.
-		If any of the buttons are in focus, perform the action.
-		Else, do nothing.
+		Override the inherited method because this window does not have a 'submit' button.
 		Because this window does not have a 'submit' button.
 		Hence, the inherited method will not work.
+		If any of the buttons are in focus, perform the action.
+		Else, do nothing.
 
 		Args:
 			self: class object
@@ -398,38 +399,38 @@ def add_password(choose_window):
 
 class AddPassword(BaseWindowClass):
 	'''
-	Create a window to add a new password. An entry will be created in 'keys.csv' file.
-	Hence, no entry should contain a comma.
+	Create a window to add a new password. A line will be added to 'keys.csv' file.
 	The password will be encrypted and stored. The other credentials are stored raw.
+	Hence, no credentials (other than the password) should contain a comma.
 	'''
 
 	def __init__(self, parent, key):
 		super().__init__(parent)
 		parent.title('Add a Password')
 		self.key = key
-		self.passlabel = tk.StringVar(value = genpass(passlength)) # suggested password
-		self.pwvar = tk.StringVar() # for 'Password' entry
-		self.cpwvar = tk.StringVar() # for 'Confirm Password' entry
+		self.plvar = tk.StringVar(value = genpass(passlength)) # suggested password label text
+		self.pwvar = tk.StringVar() # 'Password' entry text
+		self.cpvar = tk.StringVar() # 'Confirm Password' entry text
 
 		# header
-		head = tk.Label(parent, text = 'Enter Credentials', font = titlefont)
-		head.grid(row = 0, columnspan = 2, padx = 30, pady = (30, 15))
+		head_label = tk.Label(parent, text = 'Enter Credentials', font = titlefont)
+		head_label.grid(row = 0, columnspan = 2, padx = 30, pady = (30, 15))
 
 		# keyboard instruction
-		inst = tk.Label(parent, text = 'Press \'Esc\' to quit the application.')
-		inst.grid(row = 1, columnspan = 2, padx = 30, pady = (0, 30))
+		inst_label = tk.Label(parent, text = 'Press \'Esc\' to quit the application.')
+		inst_label.grid(row = 1, columnspan = 2, padx = 30, pady = (0, 30))
 
 		# account prompt label
-		acc = tk.Label(parent, text = 'Account', font = subtitlefont)
-		acc.grid(row = 2, column = 0, padx = 30, pady = 15)
+		acc_label = tk.Label(parent, text = 'Account', font = subtitlefont)
+		acc_label.grid(row = 2, column = 0, padx = 30, pady = 15)
 
 		# user ID prompt label
-		uid = tk.Label(parent, text = 'User ID (e.g. email)', font = subtitlefont)
-		uid.grid(row = 3, column = 0, padx = 30, pady = 15)
+		uid_label = tk.Label(parent, text = 'User ID (e.g. email)', font = subtitlefont)
+		uid_label.grid(row = 3, column = 0, padx = 30, pady = 15)
 
 		# user name prompt label
-		name = tk.Label(parent, text = 'User Name', font = subtitlefont)
-		name.grid(row = 4, column = 0, padx = 30, pady = 15)
+		name_label = tk.Label(parent, text = 'User Name', font = subtitlefont)
+		name_label.grid(row = 4, column = 0, padx = 30, pady = 15)
 
 		# account prompt entry
 		acc_entry = tk.Entry(parent)
@@ -449,8 +450,8 @@ class AddPassword(BaseWindowClass):
 		pw_entry.grid(row = 6, column = 1, padx = 30, pady = 15)
 
 		# confirm password prompt entry
-		cpw_entry = tk.Entry(parent, textvariable = self.cpwvar, show = '*')
-		cpw_entry.grid(row = 7, column = 1, padx = 30, pady = 15)
+		cp_entry = tk.Entry(parent, textvariable = self.cpvar, show = '*')
+		cp_entry.grid(row = 7, column = 1, padx = 30, pady = 15)
 
 		# auto-fill password entries
 		autofill_button = tk.Button(parent, text = 'Suggested Password', font = subtitlefont, command = self.set_passwords)
@@ -458,7 +459,7 @@ class AddPassword(BaseWindowClass):
 		CreateTooltip(autofill_button, 'Auto-fill the password entries\nbelow with the suggested password')
 
 		# refresh suggested password
-		refresh_button = tk.Button(parent, textvariable = self.passlabel, command = lambda : self.passlabel.set(genpass(passlength)), width = 30)
+		refresh_button = tk.Button(parent, textvariable = self.plvar, command = lambda : self.plvar.set(genpass(passlength)), width = 30)
 		refresh_button.grid(row = 5, column = 1, padx = 30, pady = 15)
 		CreateTooltip(refresh_button, 'Re-generate suggested password')
 
@@ -468,19 +469,19 @@ class AddPassword(BaseWindowClass):
 		CreateTooltip(pass_button, 'Show or hide password')
 
 		# toggle confirm password view
-		cpass_button = tk.Button(parent, text = 'Confirm Password', font = subtitlefont, command = lambda : show_pass(cpw_entry))
+		cpass_button = tk.Button(parent, text = 'Confirm Password', font = subtitlefont, command = lambda : show_pass(cp_entry))
 		cpass_button.grid(row = 7, column = 0, padx = 30, pady = 15)
 		CreateTooltip(cpass_button, 'Show or hide password')
 
 		# add the password to the file
-		self.submit = tk.Button(parent, text = 'Add', height = 2, width = 20, command = lambda : self.validate_pw(acc_entry.get(), uid_entry.get(), name_entry.get(), pw_entry.get(), cpw_entry.get()))
+		self.submit = tk.Button(parent, text = 'Add', height = 2, width = 20, command = lambda : self.validate_pw(acc_entry.get(), uid_entry.get(), name_entry.get(), pw_entry.get(), cp_entry.get()))
 		self.submit.grid(row = 8, columnspan = 2, padx = 30, pady = 30)
 
 	########################################
 
 	def set_passwords(self):
 		'''
-		Set both 'Password' and 'Confirm Password' to the sugggested password.
+		Set the entries next to 'Password' and 'Confirm Password' to the sugggested password.
 
 		Args:
 			self: class object
@@ -489,13 +490,54 @@ class AddPassword(BaseWindowClass):
 			None
 		'''
 
-		self.pwvar.set(self.passlabel.get())
-		self.cpwvar.set(self.passlabel.get())
+		self.pwvar.set(self.plvar.get())
+		self.cpvar.set(self.plvar.get())
 
 	########################################
 
 	def validate_pw(self, *credentials):
-		pass
+		'''
+		Check whether the credentials provided by the user are appropriate.
+		The account, user ID, user name and password entries must not be empty.
+		Both password entries mst have the same string.
+		There must be no comma in the account, user ID and user name entries.
+
+		Args:
+			self: class object
+			credentials: list of credentials the user entered
+
+		Returns:
+			None
+		'''
+
+		# check if any field is empty
+		if '' in credentials:
+			mb.showerror('Empty Input', 'One or more fields are still empty. Fill all of them to proceed.')
+			return
+
+		# check if any of the first three credentials contain a comma
+		if ',' in ''.join(credentials[: 3]):
+			mb.showerror('Invalid Input', 'The \'Account\', \'User ID\' and \'User Name\' fields must not contain commas.')
+			return
+
+		# rename credentials for convenience
+		acc, uid, name, pw, cp = credentials
+
+		# compare passwords
+		if pw != cp:
+			mb.showerror('Password Mismatch', 'The \'Password\' and \'Confirm Password\' fields do not match.')
+			return
+
+		# confirm and add password
+		response = mb.askyesno('Confirmation', 'Add this password?', icon = 'warning')
+		if response == False:
+			return
+		with open('keys.csv', 'a') as password_file:
+			password_file.write('{},{},{},{}\n'.format(acc, uid, name, encryptAES(pw, self.key)))
+			mb.showinfo('Password Added', 'Password for {} was added successfully.'.format(name))
+
+		self.parent.quit()
+		self.parent.destroy()
 
 ################################################################################
 
