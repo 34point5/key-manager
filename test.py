@@ -23,6 +23,7 @@ import tkinter.messagebox as mb
 titlefont = 'Noto 15 bold' # window head label font
 subtitlefont = 'Noto 10 bold' # font used by label associated with an Entry
 passlength = 18 # length of the random password generated
+phraselength = 0 # minimum passphrase length required
 
 ################################################################################
 
@@ -279,7 +280,7 @@ class Login(BaseWindowClass):
 
 		Args:
 			self: class object
-			phrase: the string typed by the user as the passphrase
+			phrase: passphrase string
 
 		Returns:
 			None
@@ -615,7 +616,7 @@ class ChangePassphrase(BaseWindowClass):
 		self.submit.grid(row = 6, columnspan = 2, padx = 30, pady = 30)
 
 		# toggle passphrase view
-		pp_button = tk.Button(parent, text = 'Passphrase', font = subtitlefont, command = lambda : show_pass(pp_entry))
+		pp_button = tk.Button(parent, text = 'New Passphrase', font = subtitlefont, command = lambda : show_pass(pp_entry))
 		pp_button.grid(row = 3, column = 0, padx = 30, pady = 15)
 		CreateTooltip(pp_button, 'Show or hide passphrase')
 
@@ -631,11 +632,67 @@ class ChangePassphrase(BaseWindowClass):
 		Change the passphrase used for logins.
 		Calculate the SHA-512 of the new passphrase. Overwrite it onto 'hash'.
 		A passphrase hint is necessary to set a new passphrase.
+
+		Args:
+			self: class object
+			pp: new passphrase string
+			cp: confirm passphrase string
+			hint: passphrase hint string
+
+		Returns:
+			None
 		'''
 
-		pass
+		# check passphrase length
+		if len(pp) < phraselength:
+			mb.showerror('Invalid Passphrase', 'The passphrase should be at least {} characters long.'.format(phraselength))
+			return
 
+		# compare passphrases
+		if pp != cp:
+			mb.showerror('Passphrase Mismatch', 'The \'Passphrase\' and \'Confirm Passphrase\' fields do not match.')
+			return
 
+		# passphrase hint is necessary
+		if hint == '':
+			mb.showerror('Hint Required', 'You must provide a hint for the new passphrase.')
+			return
+
+		# confirm and change passphrase
+		response = mb.askyesno('Confirmation', 'Change Passphrase?', icon = 'warning')
+		if response == False:
+			return
+
+		# write the SHA-512 of the new passphrase to a new file
+		with open('.hash', 'w') as hash_file:
+			print(hl.sha512(pp.encode()).hexdigest(), file = hash_file)
+			print(hint, file = hash_file)
+
+		# decrypt the encrypted passwords in 'keys.csv' using the old AES key, 'key'
+		# encrypt them using the new AES key, 'updated_key'
+		# write the newly encrpyted passwords to a new file
+		updated_key = hl.sha256(pp.encode()).digest()
+		with open('keys.csv') as password_file:
+			row = password_file.readline().strip()
+			with open('.keys', 'w') as updated_password_file:
+				while row != '':
+					last_comma = row.rfind(',')
+					pw = row[last_comma + 1 :] # last item in comma-separated list is the encrypted password
+					updated_pw = encryptAES(decryptAES(pw, self.key), updated_key)
+					print('{},{}\n'.format(row[: last_comma], updated_pw), file = updated_password_file)
+					row = password_file.readline().strip()
+		self.key = updated_key # set the new key for AES
+
+		# clean up
+		os.remove('hash')
+		os.rename('.hash', 'hash')
+		os.remove('keys.csv')
+		os.rename('.keys', 'keys.csv')
+
+		mb.showinfo('Passphrase Changed', 'Passphrase was changed successfully.')
+
+		self.parent.quit()
+		self.parent.destroy()
 
 ################################################################################
 
