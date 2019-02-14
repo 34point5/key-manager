@@ -633,7 +633,7 @@ class ChangePassphrase(BaseWindowClass):
 		A passphrase hint is necessary to set a new passphrase.
 		'''
 
-		print('boobs')
+		pass
 
 
 
