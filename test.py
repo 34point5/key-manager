@@ -658,7 +658,7 @@ class ChangePassphrase(BaseWindowClass):
 			mb.showerror('Hint Required', 'You must provide a hint for the new passphrase.')
 			return
 
-		# confirm and change passphrase
+		# confirm
 		response = mb.askyesno('Confirmation', 'Change Passphrase?', icon = 'warning')
 		if response == False:
 			return
@@ -693,21 +693,45 @@ class ChangePassphrase(BaseWindowClass):
 
 ################################################################################
 
-# def locate_row_of_interest(choose_window):
-# 	'''
-# 	Helper function to change, delete or view a password.
-# 	Locates which line of 'keys.csv' has to be changed, deleted or viewed.
-# 	Instantiates Search class and Found class.
-# 	Search class accepts a term to search in 'keys.csv' file.
-# 	Found class chooses one out of the search results.
-#
-# 	Args:
-# 		choose_window: the object whose window is required to create a tk.Toplevel
-#
-# 	Returns:
-# 		string (a row in 'keys.csv') which the user wants to change, delete or view (otherwise, None)
-# 	'''
+def locate_row_of_interest(choose_window):
+	'''
+	Helper function to change, delete or view a password.
+	Locates which line of 'keys.csv' has to be changed, deleted or viewed.
+	Instantiates Search class and Found class.
+	Search class accepts a term to search in 'keys.csv' file.
+	Found class chooses one out of the search results.
 
+	Args:
+		choose_window: the Choose object whose window is required to create a tk.Toplevel
+
+	Returns:
+		string (a row in 'keys.csv') which the user wants to change, delete or view (if a search is performed)
+		None (if search is not performed)
+	'''
+
+	# instantiate Search class to accept a search term
+	locate = tk.Toplevel(choose_window.parent)
+	locate_Search = Search(locate)
+	locate.mainloop()
+
+	# list of all rows matching the search
+	# if the user closed the 'locate' window without searching, this will be an empty list
+	found_rows = locate_Search.search_result
+	if found_rows == []:
+		return None
+
+	# instantiate Found class to display search results
+	select_row = tk.Toplevel(choose_window.parent)
+	select_row_Found = Found(select_row, found_rows)
+	select_row.mainloop()
+
+	# find what the user chose
+	# if the user closed the 'select_row' window, this will be an empty string
+	chosen_row = select_row_Found.row_of_interest
+	if chosen_row == '':
+		return None
+
+	return chosen_row
 
 ################################################################################
 
@@ -764,18 +788,212 @@ class Search(BaseWindowClass):
 
 		# find the string in 'keys.csv'
 		with open('keys.csv') as password_file:
-			row = password_file.readline().strip()
-			while row != '':
+			for row in password_file:
 				if item.lower() in row[: row.rfind(',')].lower():
-					self.search_result.append(row)
-				# row =
+					self.search_result.append(row.strip())
+
+		# if search was unsuccessful, allow the user to try again
+		if self.search_result == []:
+			mb.showinfo('Nothing Found','The search term you entered could not be found.')
+			return
+
+		# search was successful--close the window
+		self.parent.quit()
+		self.parent.destroy()
+
+################################################################################
+
+class Found(BaseWindowClass):
+	'''
+	Obtain the list of search results provided by above Search class.
+	Display all the search results in a new window using radio buttons.
+	The user must select the one they are interested in.
+	'''
+
+	def __init__(self, parent, rows):
+		super().__init__(parent)
+		parent.title('Search Results')
+		self.rows = rows
+		self.row_of_interest = ''
+
+		# header
+		head_label = tk.Label(parent, text = 'Select an Account', font = titlefont)
+		head_label.grid(row = 0, columnspan = 4, padx = 30, pady = (30, 15))
+
+		# keyboard instruction
+		inst_label = tk.Label(parent, text = 'Press \'Esc\' to return to the main menu.')
+		inst_label.grid(row = 1, columnspan = 4, padx = 30, pady = (0, 30))
+
+		# radio button selection variable
+		selection = tk.IntVar(value = 2)
+
+		# create labels in loop
+		for i, row in enumerate(rows, 2):
+
+			# rename the comma-separated items for convenience
+			acc, uid, name, pw = row.split(',')
+
+			# radio button
+			choice_rbutton = tk.Radiobutton(parent, variable = selection, value = i)
+			choice_rbutton.grid(row = i, column = 0, padx = (30, 0))
+
+			# account label
+			acc_label = tk.Label(parent, text = acc)
+			acc_label.grid(row = i, column = 1, padx = (0, 15))
+
+			# user ID label
+			uid_label = tk.Label(parent, text = uid)
+			uid_label.grid(row = i, column = 2, padx = (0, 15))
+
+			# user name label
+			name_label = tk.Label(parent, text = name)
+			name_label.grid(row = i, column = 3, padx = (0, 15))
+
+		# make selection
+		self.submit = tk.Button(parent, text = 'Select', height = 2, width = 20, command = lambda : self.get_password_line(selection.get()))
+		self.submit.grid(row = i + 1, columnspan = 4, padx = 30, pady = 30)
+
+	########################################
+
+	def get_password_line(self, row_index):
+		'''
+		Send the row of interest back to 'locate_row_of_interest' function.
+		Do this by setting value of a class member to that string (row).
+
+		Args:
+			self: class object
+			row_index: the value of the radio button the user selected
+
+		Returns:
+			None
+		'''
+
+		self.parent.quit()
+		self.parent.destroy()
+		self.row_of_interest = self.rows[row_index - 2]
+
+################################################################################
+
+def delete_password(choose_window):
+	'''
+	Wrapper function to instantiate the DeletePassword class.
+
+	Args:
+		choose_window: the Choose object whose window has to be hidden before displaying a new window
+
+	Returns:
+		None
+	'''
+
+	# hide the option choosing window
+	choose_window.parent.withdraw()
+
+	# obtain the row containing the password to be deleted
+	row_of_interest = locate_row_of_interest(choose_window)
+	if row_of_interest is None:
+		choose_window.parent.deiconify() # unhide the option choosing window
+		return
+
+	deleter = tk.Toplevel(choose_window.parent)
+	DeletePassword(deleter, row_of_interest)
+	deleter.mainloop()
+
+	# unhide the option choosing window
+	choose_window.parent.deiconify()
+
+################################################################################
+
+class DeletePassword(BaseWindowClass):
+	'''
+	Display the account which the user wants to delete from 'keys.csv' file.
+	Ask for confirmation before deleting.
+	'''
+
+	def __init__(self, parent, row_of_interest):
+		super().__init__(parent)
+		parent.title('Delete a Password')
+		# self.row_of_interest = row_of_interest
+
+		# rename the comma-separated items for convenience
+		acc, uid, name, pw = row_of_interest.split(',')
+
+		# header
+		head_label = tk.Label(parent, text = 'Confirm Delete', font = titlefont)
+		head_label.grid(row = 0, columnspan = 2, padx = 30, pady = (30, 15))
+
+		# sub-header
+		subhead_label = tk.Label(parent, text = 'Confirm that you want to delete the password\nassociated with this account. This operation is\nirreversible.')
+		subhead_label.grid(row = 1, columnspan = 2, padx = 30, pady = (0, 15))
+
+		# keyboard instruction
+		inst_label = tk.Label(parent, text = 'Press \'Esc\' to return to the main menu.')
+		inst_label.grid(row = 2, columnspan = 2, padx = 30, pady = (0, 30))
+
+		# account question label
+		acc_q_label = tk.Label(parent, text = 'Account', font = subtitlefont)
+		acc_q_label.grid(row = 3, column = 0, padx = 30, pady = 15)
+
+		# account answer label
+		acc_a_label = tk.Label(parent, text = acc)
+		acc_a_label.grid(row = 3, column = 1, padx = 30, pady = 15)
+
+		# user ID question label
+		uid_q_label = tk.Label(parent, text = 'User ID', font = subtitlefont)
+		uid_q_label.grid(row = 4, column = 0, padx = 30, pady = 15)
+
+		# user ID answer label
+		uid_a_label = tk.Label(parent, text = uid)
+		uid_a_label.grid(row = 4, column = 1, padx = 30, pady = 15)
+
+		# user name question label
+		name_q_label = tk.Label(parent, text = 'User Name', font = subtitlefont)
+		name_q_label.grid(row = 5, column = 0, padx = 30, pady = 15)
+
+		# user name answer label
+		name_a_label = tk.Label(parent, text = name)
+		name_a_label.grid(row = 5, column = 1, padx = 30, pady = 15)
+
+		# delete the password line
+		self.submit = tk.Button(parent, text = 'Delete', height = 2, width = 20, command = lambda : self.remove_pass(row_of_interest))
+		self.submit.grid(row = 6, columnspan = 2, padx = 30, pady = 30)
+
+	########################################
+
+	def remove_pass(self, row_of_interest):
+		'''
+		Copy all lines in 'keys.csv' (except the line to be deleted) to a new file.
+		Then rename the new file to 'keys.csv', thus deleting the password the user wanted to delete.
+
+		Args:
+			self: class object
+			row_of_interest: the row (string) to be removed from 'keys.csv'
+
+		Returns:
+			None
+		'''
+
+		# confirm and delete password
+		response = mb.askyesno('Confirmation', 'Delete this password? This process cannot be undone.', icon = 'warning')
+		if response == False:
+			return
+		with open('keys.csv') as password_file, open('.keys', 'w') as updated_password_file:
+			for row in password_file:
+				row = row.strip()
+				if row != row_of_interest:
+					print(row, file = updated_password_file)
+
+		# clean up
+		os.remove('keys.csv')
+		os.rename('.keys', 'keys.csv')
+
+		mb.showinfo('Password Deleted', 'The password was deleted successfully.')
+
+		self.parent.quit()
+		self.parent.destroy()
 
 ################################################################################
 
 if __name__ == '__main__':
-	# root = tk.Tk()
-	# root_BaseClass = BaseClass(root)
-	# root.mainloop()
 
 	# x = 'srbsedfvvgedvgdvfoemxpuifbhasch,widj'
 	# k = hl.sha256('avfegbsdvge'.encode()).digest()
@@ -785,6 +1003,7 @@ if __name__ == '__main__':
 	# print(y)
 	# print(z)
 	# print(k)
+	# raise SystemExit
 
 	root = tk.Tk()
 	root_Login = Login(root)
