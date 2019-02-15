@@ -409,16 +409,19 @@ class AddPassword(BaseWindowClass):
 		super().__init__(parent)
 		parent.title('Add a Password')
 		self.key = key
-		self.plvar = tk.StringVar(value = genpass(passlength)) # suggested password label text
-		self.pwvar = tk.StringVar() # 'Password' entry text
-		self.cpvar = tk.StringVar() # 'Confirm Password' entry text
+		self.plvar = tk.StringVar(value = genpass(passlength)) # for 'refresh_button'
+		self.accvar = tk.StringVar() # for 'acc_entry'
+		self.uidvar = tk.StringVar() # for 'uid_entry'
+		self.namevar = tk.StringVar() # for 'name_entry'
+		self.pwvar = tk.StringVar() # for 'pw_entry'
+		self.cpvar = tk.StringVar() # for 'cp_entry'
 
 		# header
 		head_label = tk.Label(parent, text = 'Enter Credentials', font = titlefont)
 		head_label.grid(row = 0, columnspan = 2, padx = 30, pady = (30, 15))
 
 		# keyboard instruction
-		inst_label = tk.Label(parent, text = 'Press \'Esc\' to quit the application.')
+		inst_label = tk.Label(parent, text = 'Press \'Esc\' to return to the main menu.')
 		inst_label.grid(row = 1, columnspan = 2, padx = 30, pady = (0, 30))
 
 		# account prompt label
@@ -434,16 +437,16 @@ class AddPassword(BaseWindowClass):
 		name_label.grid(row = 4, column = 0, padx = 30, pady = 15)
 
 		# account prompt entry
-		acc_entry = tk.Entry(parent)
+		acc_entry = tk.Entry(parent, textvariable = self.accvar)
 		acc_entry.grid(row = 2, column = 1, padx = 30, pady = 15)
 		acc_entry.focus()
 
 		# user ID prompt entry
-		uid_entry = tk.Entry(parent)
+		uid_entry = tk.Entry(parent, textvariable = self.uidvar)
 		uid_entry.grid(row = 3, column = 1, padx = 30, pady = 15)
 
 		# user name prompt entry
-		name_entry = tk.Entry(parent)
+		name_entry = tk.Entry(parent, textvariable = self.namevar)
 		name_entry.grid(row = 4, column = 1, padx = 30, pady = 15)
 
 		# password prompt entry
@@ -591,7 +594,7 @@ class ChangePassphrase(BaseWindowClass):
 		subhead_label.grid(row = 1, columnspan = 2, padx = 30, pady = (0, 15))
 
 		# keyboard instruction
-		inst_label = tk.Label(parent, text = 'Press \'Esc\' to quit the application.')
+		inst_label = tk.Label(parent, text = 'Press \'Esc\' to return to the main menu.')
 		inst_label.grid(row = 2, columnspan = 2, padx = 30, pady = (0, 30))
 
 		# passphrase hint prompt label
@@ -893,7 +896,6 @@ def delete_password(choose_window):
 	if row_of_interest is None:
 		choose_window.parent.deiconify() # unhide the option choosing window
 		return
-
 	deleter = tk.Toplevel(choose_window.parent)
 	DeletePassword(deleter, row_of_interest)
 	deleter.mainloop()
@@ -912,7 +914,6 @@ class DeletePassword(BaseWindowClass):
 	def __init__(self, parent, row_of_interest):
 		super().__init__(parent)
 		parent.title('Delete a Password')
-		# self.row_of_interest = row_of_interest
 
 		# rename the comma-separated items for convenience
 		acc, uid, name, pw = row_of_interest.split(',')
@@ -990,6 +991,59 @@ class DeletePassword(BaseWindowClass):
 
 		self.parent.quit()
 		self.parent.destroy()
+
+################################################################################
+
+def change_password(choose_window):
+	'''
+	Wrapper function to instantiate the ChangePassword class.
+
+	Args:
+		choose_window: the Choose object whose window has to be hidden before displaying a new window
+
+	Returns:
+		None
+	'''
+
+	# hide the option choosing window
+	choose_window.parent.withdraw()
+
+	# obtain the row containing the password to be changed
+	row_of_interest = locate_row_of_interest(choose_window)
+	if row_of_interest is None:
+		choose_window.parent.deiconify() # unhide the option choosing window
+		return
+	changer = tk.Toplevel(choose_window.parent)
+	ChangePassword(changer, choose_window.key, row_of_interest)
+	changer.mainloop()
+
+	# unhide the option choosing window
+	choose_window.parent.deiconify()
+
+################################################################################
+
+class ChangePassword(AddPassword):
+	'''
+	Mostly the same as AddPassword, hence inheriting it rather than BaseWindowClass.
+	Only some labels and the behaviour of 'self.submit' are different.
+	'''
+
+	def __init__(self, parent, key, row_of_interest):
+		super().__init__(parent, key)
+		parent.title('Change a Password')
+
+		# rename the comma-separated items for convenience
+		acc, uid, name, pw = row_of_interest.split(',')
+
+		# fill the first three fields using the previously set credentials
+		# leave the password fields blank
+		self.accvar.set(acc)
+		self.uidvar.set(uid)
+		self.namevar.set(name)
+
+		# change the text on the 'submit' button, which is 'Add' because of inheritance
+		# it should be 'Change' to reflect what this class is doing
+		self.submit['text'] = 'Change'
 
 ################################################################################
 
