@@ -24,7 +24,7 @@ titlefont = 'Noto 15 bold' # window head label font
 subtitlefont = 'Noto 10 bold' # font used by label associated with an Entry
 passlength = 18 # length of the random password generated
 phraselength = 0 # minimum passphrase length required while changing passphrase
-pad = 20 # the padding used for tkinter widgets
+pad = 30 # the padding used for tkinter widgets
 h, w = 2, 20 # main button sizes
 
 ################################################################################
@@ -373,11 +373,11 @@ class Choose(BaseWindowClass):
 
 		# change passphrase button
 		cpp_button = tk.Button(parent, text = 'Change a Password', height = h, width = w, command = lambda : change_password(self))
-		cpp_button.grid(row = 3, column = 0, padx = pad, pady = (pad / 4, pad / 4))
+		cpp_button.grid(row = 3, column = 0, padx = pad, pady = pad / 4)
 
 		# view button
 		view_button = tk.Button(parent, text = 'View a Password', height = h, width = w, command = lambda : view_password(self))
-		view_button.grid(row = 3, column = 1, padx = pad, pady = (pad / 4, pad / 4))
+		view_button.grid(row = 3, column = 1, padx = pad, pady = pad / 4)
 
 		# change passphrase button
 		cpw_button = tk.Button(parent, text = 'Change Passphrase', height = h, width = w, command = lambda : change_passphrase(self))
@@ -433,48 +433,48 @@ class AddPassword(BaseWindowClass):
 
 		# header
 		head_label = tk.Label(parent, text = 'Enter Credentials', font = titlefont)
-		head_label.grid(row = 0, columnspan = 2, padx = pad, pady = (pad, pad / 2))
+		head_label.grid(row = 0, columnspan = 2, padx = pad, pady = (pad, pad / 4))
 
 		# keyboard instruction
 		inst_label = tk.Label(parent, text = 'Press \'Esc\' to return to the main menu.')
-		inst_label.grid(row = 1, columnspan = 2, padx = pad, pady = (0, pad))
+		inst_label.grid(row = 1, columnspan = 2, padx = pad, pady = (pad / 4, pad / 2))
 
 		# account prompt label
 		acc_label = tk.Label(parent, text = 'Account', font = subtitlefont)
-		acc_label.grid(row = 2, column = 0, padx = pad, pady = pad / 2)
+		acc_label.grid(row = 2, column = 0, padx = pad, pady = (pad / 2, pad / 4))
 
 		# user ID prompt label
 		uid_label = tk.Label(parent, text = 'User ID (e.g. email)', font = subtitlefont)
-		uid_label.grid(row = 3, column = 0, padx = pad, pady = pad / 2)
+		uid_label.grid(row = 3, column = 0, padx = pad, pady = pad / 4)
 
 		# user name prompt label
 		name_label = tk.Label(parent, text = 'User Name', font = subtitlefont)
-		name_label.grid(row = 4, column = 0, padx = pad, pady = pad / 2)
+		name_label.grid(row = 4, column = 0, padx = pad, pady = (pad / 4, pad / 2))
 
 		# account prompt entry
 		acc_entry = tk.Entry(parent, textvariable = self.accvar)
-		acc_entry.grid(row = 2, column = 1, padx = pad, pady = pad / 2)
+		acc_entry.grid(row = 2, column = 1, padx = pad, pady = (pad / 2, pad / 4))
 		acc_entry.focus()
 
 		# user ID prompt entry
 		uid_entry = tk.Entry(parent, textvariable = self.uidvar)
-		uid_entry.grid(row = 3, column = 1, padx = pad, pady = pad / 2)
+		uid_entry.grid(row = 3, column = 1, padx = pad, pady = pad / 4)
 
 		# user name prompt entry
 		name_entry = tk.Entry(parent, textvariable = self.namevar)
-		name_entry.grid(row = 4, column = 1, padx = pad, pady = pad / 2)
+		name_entry.grid(row = 4, column = 1, padx = pad, pady = (pad / 4, pad / 2))
 
 		# password prompt entry
 		pw_entry = tk.Entry(parent, textvariable = self.pwvar, show = '*')
-		pw_entry.grid(row = 6, column = 1, padx = pad, pady = pad / 2)
+		pw_entry.grid(row = 6, column = 1, padx = pad, pady = (pad / 2, pad / 4))
 
 		# confirm password prompt entry
 		cp_entry = tk.Entry(parent, textvariable = self.cpvar, show = '*')
-		cp_entry.grid(row = 7, column = 1, padx = pad, pady = pad / 2)
+		cp_entry.grid(row = 7, column = 1, padx = pad, pady = (pad / 4, pad / 2))
 
 		# add the password to the file
 		self.submit = tk.Button(parent, text = 'Add', height = h, width = w, command = lambda : self.validate_pw(acc_entry.get(), uid_entry.get(), name_entry.get(), pw_entry.get(), cp_entry.get()))
-		self.submit.grid(row = 8, columnspan = 2, padx = pad, pady = pad)
+		self.submit.grid(row = 8, columnspan = 2, padx = pad, pady = (pad / 2, pad))
 
 		# auto-fill password entries
 		autofill_button = tk.Button(parent, text = 'Suggested Password', font = subtitlefont, command = self.set_passwords)
@@ -488,12 +488,12 @@ class AddPassword(BaseWindowClass):
 
 		# toggle password view
 		pass_button = tk.Button(parent, text = 'Password', font = subtitlefont, command = lambda : show_pass(pw_entry))
-		pass_button.grid(row = 6, column = 0, padx = pad, pady = pad / 2)
+		pass_button.grid(row = 6, column = 0, padx = pad, pady = (pad / 2, pad / 4))
 		CreateTooltip(pass_button, 'Show or hide password')
 
 		# toggle confirm password view
 		cpass_button = tk.Button(parent, text = 'Confirm Password', font = subtitlefont, command = lambda : show_pass(cp_entry))
-		cpass_button.grid(row = 7, column = 0, padx = pad, pady = pad / 2)
+		cpass_button.grid(row = 7, column = 0, padx = pad, pady = (pad / 4, pad / 2))
 		CreateTooltip(cpass_button, 'Show or hide password')
 
 	########################################
@@ -593,45 +593,45 @@ class ChangePassphrase(BaseWindowClass):
 
 		# header
 		head_label = tk.Label(parent, text = 'Enter new Passphrase', font = titlefont)
-		head_label.grid(row = 0, columnspan = 2, padx = pad, pady = (pad, pad / 2))
+		head_label.grid(row = 0, columnspan = 2, padx = pad, pady = (pad, pad / 4))
 
 		# sub-header
 		subhead_label = tk.Label(parent, text = 'Use a long easy-to-remember passphrase.\nAvoid a short random one. Include special characters!')
-		subhead_label.grid(row = 1, columnspan = 2, padx = pad, pady = (0, pad / 2))
+		subhead_label.grid(row = 1, columnspan = 2, padx = pad, pady = pad / 4)
 
 		# keyboard instruction
 		inst_label = tk.Label(parent, text = 'Press \'Esc\' to return to the main menu.')
-		inst_label.grid(row = 2, columnspan = 2, padx = pad, pady = (0, pad))
+		inst_label.grid(row = 2, columnspan = 2, padx = pad, pady = (pad / 4, pad / 2))
 
 		# passphrase hint prompt label
 		hint_label = tk.Label(parent, text = 'Passphrase Hint', font = subtitlefont)
-		hint_label.grid(row = 5, column = 0, padx = pad, pady = pad / 2)
+		hint_label.grid(row = 5, column = 0, padx = pad, pady = (pad / 4, pad / 2))
 
 		# passphrase prompt entry
 		pp_entry = tk.Entry(parent, show = '*')
-		pp_entry.grid(row = 3, column = 1, padx = pad, pady = pad / 2)
+		pp_entry.grid(row = 3, column = 1, padx = pad, pady = (pad / 2, pad / 4))
 		pp_entry.focus()
 
 		# confirm passphrase prompt entry
 		cp_entry = tk.Entry(parent, show = '*')
-		cp_entry.grid(row = 4, column = 1, padx = pad, pady = pad / 2)
+		cp_entry.grid(row = 4, column = 1, padx = pad, pady = pad / 4)
 
 		# passphrase hint prompt entry
 		hint_entry = tk.Entry(parent)
-		hint_entry.grid(row = 5, column = 1, padx = pad, pady = pad / 2)
+		hint_entry.grid(row = 5, column = 1, padx = pad, pady = (pad / 4, pad / 2))
 
 		# change the passphrase
 		self.submit = tk.Button(parent, text = 'Change', height = h, width = w, command = lambda : self.update_phrase(pp_entry.get(), cp_entry.get(), hint_entry.get()))
-		self.submit.grid(row = 6, columnspan = 2, padx = pad, pady = pad)
+		self.submit.grid(row = 6, columnspan = 2, padx = pad, pady = (pad / 2, pad))
 
 		# toggle passphrase view
 		pp_button = tk.Button(parent, text = 'New Passphrase', font = subtitlefont, command = lambda : show_pass(pp_entry))
-		pp_button.grid(row = 3, column = 0, padx = pad, pady = pad / 2)
+		pp_button.grid(row = 3, column = 0, padx = pad, pady = (pad / 2, pad / 4))
 		CreateTooltip(pp_button, 'Show or hide passphrase')
 
 		# toggle confirm passphrase view
 		cp_button = tk.Button(parent, text = 'Confirm Passphrase', font = subtitlefont, command = lambda : show_pass(cp_entry))
-		cp_button.grid(row = 4, column = 0, padx = pad, pady = pad / 2)
+		cp_button.grid(row = 4, column = 0, padx = pad, pady = pad / 4)
 		CreateTooltip(cp_button, 'Show or hide passphrase')
 
 	########################################
@@ -757,15 +757,15 @@ class Search(BaseWindowClass):
 
 		# header
 		head_label = tk.Label(parent, text = 'Search Accounts', font = titlefont)
-		head_label.grid(row = 0, columnspan = 2, padx = pad, pady = (pad, pad / 2))
+		head_label.grid(row = 0, columnspan = 2, padx = pad, pady = (pad, pad / 4))
 
 		# sub-header
 		subhead_label = tk.Label(parent, text = 'You may leave the field blank if\nyou want a list of all accounts.')
-		subhead_label.grid(row = 1, columnspan = 2, padx = pad, pady = (0, pad / 2))
+		subhead_label.grid(row = 1, columnspan = 2, padx = pad, pady = pad / 4)
 
 		# keyboard instruction
 		inst_label = tk.Label(parent, text = 'Press \'Esc\' to return to the main menu.')
-		inst_label.grid(row = 2, columnspan = 2, padx = pad, pady = (0, pad))
+		inst_label.grid(row = 2, columnspan = 2, padx = pad, pady = (pad / 4, pad / 2))
 
 		# search prompt label
 		search_label = tk.Label(parent, text = 'Search Term', font = subtitlefont)
@@ -778,7 +778,7 @@ class Search(BaseWindowClass):
 
 		# perform the search
 		self.submit = tk.Button(parent, text = 'Search', height = h, width = w, command = lambda : self.search_password(search_entry.get()))
-		self.submit.grid(row = 4, columnspan = 2, padx = pad, pady = pad)
+		self.submit.grid(row = 4, columnspan = 2, padx = pad, pady = (pad / 2, pad))
 
 	########################################
 
@@ -827,11 +827,11 @@ class Found(BaseWindowClass):
 
 		# header
 		head_label = tk.Label(parent, text = 'Select an Account', font = titlefont)
-		head_label.grid(row = 0, columnspan = 4, padx = pad, pady = (pad, pad / 2))
+		head_label.grid(row = 0, columnspan = 4, padx = pad, pady = (pad, pad / 4))
 
 		# keyboard instruction
 		inst_label = tk.Label(parent, text = 'Press \'Esc\' to return to the main menu.')
-		inst_label.grid(row = 1, columnspan = 4, padx = pad, pady = (0, pad))
+		inst_label.grid(row = 1, columnspan = 4, padx = pad, pady = (pad / 4, pad))
 
 		# radio button selection variable
 		selection = tk.IntVar(value = 2)
@@ -848,15 +848,15 @@ class Found(BaseWindowClass):
 
 			# account label
 			acc_label = tk.Label(parent, text = acc)
-			acc_label.grid(row = i, column = 1, padx = (0, pad / 2))
+			acc_label.grid(row = i, column = 1, padx = (0, pad / 4))
 
 			# user ID label
 			uid_label = tk.Label(parent, text = uid)
-			uid_label.grid(row = i, column = 2, padx = (0, pad / 2))
+			uid_label.grid(row = i, column = 2, padx = pad / 4)
 
 			# user name label
 			name_label = tk.Label(parent, text = name)
-			name_label.grid(row = i, column = 3, padx = (0, pad / 2))
+			name_label.grid(row = i, column = 3, padx = (pad / 4, pad))
 
 		# make selection
 		self.submit = tk.Button(parent, text = 'Select', height = h, width = w, command = lambda : self.get_password_line(selection.get()))
@@ -927,43 +927,43 @@ class DeletePassword(BaseWindowClass):
 
 		# header
 		head_label = tk.Label(parent, text = 'Confirm Delete', font = titlefont)
-		head_label.grid(row = 0, columnspan = 2, padx = pad, pady = (pad, pad / 2))
+		head_label.grid(row = 0, columnspan = 2, padx = pad, pady = (pad, pad / 4))
 
 		# sub-header
 		subhead_label = tk.Label(parent, text = 'Confirm that you want to delete the password\nassociated with this account. This operation is\nirreversible.')
-		subhead_label.grid(row = 1, columnspan = 2, padx = pad, pady = (0, pad / 2))
+		subhead_label.grid(row = 1, columnspan = 2, padx = pad, pady = (pad / 4, pad / 4))
 
 		# keyboard instruction
 		inst_label = tk.Label(parent, text = 'Press \'Esc\' to return to the main menu.')
-		inst_label.grid(row = 2, columnspan = 2, padx = pad, pady = (0, pad))
+		inst_label.grid(row = 2, columnspan = 2, padx = pad, pady = (pad / 4, pad / 2))
 
 		# account question label
 		acc_q_label = tk.Label(parent, text = 'Account', font = subtitlefont)
-		acc_q_label.grid(row = 3, column = 0, padx = pad, pady = pad / 2)
+		acc_q_label.grid(row = 3, column = 0, padx = pad, pady = (pad / 2, pad / 4))
 
 		# account answer label
 		acc_a_label = tk.Label(parent, text = acc)
-		acc_a_label.grid(row = 3, column = 1, padx = pad, pady = pad / 2)
+		acc_a_label.grid(row = 3, column = 1, padx = pad, pady = (pad / 2, pad / 4))
 
 		# user ID question label
 		uid_q_label = tk.Label(parent, text = 'User ID', font = subtitlefont)
-		uid_q_label.grid(row = 4, column = 0, padx = pad, pady = pad / 2)
+		uid_q_label.grid(row = 4, column = 0, padx = pad, pady = pad / 4)
 
 		# user ID answer label
 		uid_a_label = tk.Label(parent, text = uid)
-		uid_a_label.grid(row = 4, column = 1, padx = pad, pady = pad / 2)
+		uid_a_label.grid(row = 4, column = 1, padx = pad, pady = pad / 4)
 
 		# user name question label
 		name_q_label = tk.Label(parent, text = 'User Name', font = subtitlefont)
-		name_q_label.grid(row = 5, column = 0, padx = pad, pady = pad / 2)
+		name_q_label.grid(row = 5, column = 0, padx = pad, pady = (pad / 4, pad / 2))
 
 		# user name answer label
 		name_a_label = tk.Label(parent, text = name)
-		name_a_label.grid(row = 5, column = 1, padx = pad, pady = pad / 2)
+		name_a_label.grid(row = 5, column = 1, padx = pad, pady = (pad / 4, pad / 2))
 
 		# delete the password line
 		self.submit = tk.Button(parent, text = 'Delete', height = h, width = w, command = self.remove_pass)
-		self.submit.grid(row = 6, columnspan = 2, padx = pad, pady = pad)
+		self.submit.grid(row = 6, columnspan = 2, padx = pad, pady = (pad / 2, pad))
 
 	########################################
 
@@ -1143,47 +1143,47 @@ class ViewPassword(BaseWindowClass):
 
 		# header
 		head_label = tk.Label(parent, text = 'View Credentials', font = titlefont)
-		head_label.grid(row = 0, columnspan = 2, padx = pad, pady = (pad, pad / 2))
+		head_label.grid(row = 0, columnspan = 2, padx = pad, pady = (pad, pad / 4))
 
 		# sub-header
 		subhead_label = tk.Label(parent, text = 'Your credentials are as shown.')
-		subhead_label.grid(row = 1, columnspan = 2, padx = pad, pady = (0, pad))
+		subhead_label.grid(row = 1, columnspan = 2, padx = pad, pady = (pad / 4, pad / 2))
 
 		# account question label
 		acc_q_label = tk.Label(parent, text = 'Account', font = subtitlefont)
-		acc_q_label.grid(row = 2, column = 0, padx = pad, pady = pad / 2)
+		acc_q_label.grid(row = 2, column = 0, padx = pad, pady = (pad / 2, pad / 4))
 
 		# account answer label
 		acc_a_label = tk.Label(parent, text = acc)
-		acc_a_label.grid(row = 2, column = 1, padx = pad, pady = pad / 2)
+		acc_a_label.grid(row = 2, column = 1, padx = pad, pady = (pad / 2, pad / 4))
 
 		# user ID question label
 		uid_q_label = tk.Label(parent, text = 'User ID', font = subtitlefont)
-		uid_q_label.grid(row = 3, column = 0, padx = pad, pady = pad / 2)
+		uid_q_label.grid(row = 3, column = 0, padx = pad, pady = pad / 4)
 
 		# user ID answer label
 		uid_a_label = tk.Label(parent, text = uid)
-		uid_a_label.grid(row = 3, column = 1, padx = pad, pady = pad / 2)
+		uid_a_label.grid(row = 3, column = 1, padx = pad, pady = pad / 4)
 
 		# user name question label
 		name_q_label = tk.Label(parent, text = 'User Name', font = subtitlefont)
-		name_q_label.grid(row = 4, column = 0, padx = pad, pady = pad / 2)
+		name_q_label.grid(row = 4, column = 0, padx = pad, pady = pad / 4)
 
 		# user name answer label
 		name_a_label = tk.Label(parent, text = name)
-		name_a_label.grid(row = 4, column = 1, padx = pad, pady = pad / 2)
+		name_a_label.grid(row = 4, column = 1, padx = pad, pady = pad / 4)
 
 		# password question label
 		pw_q_label = tk.Label(parent, text = 'Password', font = subtitlefont)
-		pw_q_label.grid(row = 5, column = 0, padx = pad, pady = pad / 2)
+		pw_q_label.grid(row = 5, column = 0, padx = pad, pady = (pad / 4, pad / 2))
 
 		# password answer label
 		pw_a_label = tk.Label(parent, text = decryptAES(pw, key))
-		pw_a_label.grid(row = 5, column = 1, padx = pad, pady = pad / 2)
+		pw_a_label.grid(row = 5, column = 1, padx = pad, pady = (pad / 4, pad / 2))
 
 		# return to main menu
 		self.submit = tk.Button(parent, text = 'Done', height = h, width = w, command = self.close_button)
-		self.submit.grid(row = 6, columnspan = 2, padx = pad, pady = pad)
+		self.submit.grid(row = 6, columnspan = 2, padx = pad, pady = (pad / 2, pad))
 
 ################################################################################
 
