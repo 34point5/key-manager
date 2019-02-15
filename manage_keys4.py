@@ -24,7 +24,7 @@ titlefont = 'Noto 15 bold' # window head label font
 subtitlefont = 'Noto 10 bold' # font used by label associated with an Entry
 passlength = 18 # length of the random password generated
 phraselength = 0 # minimum passphrase length required while changing passphrase
-pad = 30 # the padding used for tkinter widgets
+pad = 40 # the padding used for tkinter widgets
 h, w = 2, 20 # main button sizes
 
 ################################################################################
