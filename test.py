@@ -23,7 +23,7 @@ import tkinter.messagebox as mb
 titlefont = 'Noto 15 bold' # window head label font
 subtitlefont = 'Noto 10 bold' # font used by label associated with an Entry
 passlength = 18 # length of the random password generated
-phraselength = 0 # minimum passphrase length required
+phraselength = 0 # minimum passphrase length required while changing it
 
 ################################################################################
 
@@ -33,10 +33,10 @@ def genpass(n):
 	There will be more English letters in the password than special characters.
 
 	Args:
-		n: the length of the random password to be generated
+		n: the integer length of the random password to be generated
 
 	Returns:
-		password made of random English letters and special characters
+		password string made of random English letters and special characters
 	'''
 
 	letter = string.ascii_letters
@@ -52,7 +52,7 @@ def show_pass(entry_name):
 	Change the display mode from asterisks to normal and vice versa.
 
 	Args:
-		entry_name: name of entry whose contents have to be censored or displayed
+		entry_name: tk.Entry object whose contents have to be censored or displayed
 
 	Returns:
 		None
@@ -65,7 +65,7 @@ def show_pass(entry_name):
 
 ################################################################################
 
-def encryptAES(plaintext, AES_key):
+def encryptAES(plaintext, key):
 	'''
 	Encrypt a given string using AES256.
 	Before encrypting, plaintext string is converted to bytes.
@@ -73,21 +73,21 @@ def encryptAES(plaintext, AES_key):
 
 	Args:
 		plaintext: string to be encrypted
-		AES_key: 256-bit encryption key
+		key: stream of bytes (256-bit encryption key)
 
 	Returns:
 		base64-encoded ciphertext (encrypted version of plaintext) string
 	'''
 
 	initialization_vector = RND.new().read(AES.block_size);
-	encryption_suite = AES.new(AES_key, AES.MODE_CFB, initialization_vector)
+	encryption_suite = AES.new(key, AES.MODE_CFB, initialization_vector)
 	composite = initialization_vector + encryption_suite.encrypt(plaintext.encode())
 	ciphertext = base64.b64encode(composite).decode()
 	return ciphertext
 
 ################################################################################
 
-def decryptAES(ciphertext, AES_key):
+def decryptAES(ciphertext, key):
 	'''
 	Decrypt a given string using AES256.
 	Before decrypting, ciphertext string is converted to bytes.
@@ -95,7 +95,7 @@ def decryptAES(ciphertext, AES_key):
 
 	Args:
 		ciphertext: base64-encoded string to be decrypted
-		AES_key: 256-bit decryption key (same as encryption key above)
+		AES_key: stream of bytes (256-bit encryption key) (same as encryption key above)
 
 	Returns:
 		plaintext (decrypted version of plaintext) string
@@ -103,7 +103,7 @@ def decryptAES(ciphertext, AES_key):
 
 	ciphertext = base64.b64decode(ciphertext.encode())
 	initialization_vector = ciphertext[: AES.block_size]
-	decryption_suite = AES.new(AES_key, AES.MODE_CFB, initialization_vector)
+	decryption_suite = AES.new(key, AES.MODE_CFB, initialization_vector)
 	plaintext = decryption_suite.decrypt(ciphertext[AES.block_size :]).decode()
 	return plaintext
 
@@ -380,7 +380,7 @@ def add_password(choose_window):
 	Wrapper function to instantiate the AddPassword class.
 
 	Args:
-		choose_window: the object whose window has to be hidden before displaying a new window
+		choose_window: the Choose object whose window has to be hidden before displaying a new window
 
 	Returns:
 		None
@@ -505,7 +505,7 @@ class AddPassword(BaseWindowClass):
 
 		Args:
 			self: class object
-			credentials: list of credentials the user entered
+			credentials: list of credential strings the user entered
 
 		Returns:
 			None
@@ -534,7 +534,7 @@ class AddPassword(BaseWindowClass):
 		if response == False:
 			return
 		with open('keys.csv', 'a') as password_file:
-			password_file.write('{},{},{},{}\n'.format(acc, uid, name, encryptAES(pw, self.key)))
+			print('{},{},{},{}'.format(acc, uid, name, encryptAES(pw, self.key)), file = password_file)
 			mb.showinfo('Password Added', 'Password for {} was added successfully.'.format(name))
 
 		self.parent.quit()
@@ -547,7 +547,7 @@ def change_passphrase(choose_window):
 	Wrapper function to instantiate the ChangePassphrase class.
 
 	Args:
-		choose_window: the object whose window has to be hidden before displaying a new window
+		choose_window: the Choose object whose window has to be hidden before displaying a new window
 
 	Returns:
 		None
@@ -672,15 +672,12 @@ class ChangePassphrase(BaseWindowClass):
 		# encrypt them using the new AES key, 'updated_key'
 		# write the newly encrpyted passwords to a new file
 		updated_key = hl.sha256(pp.encode()).digest()
-		with open('keys.csv') as password_file:
-			row = password_file.readline().strip()
-			with open('.keys', 'w') as updated_password_file:
-				while row != '':
-					last_comma = row.rfind(',')
-					pw = row[last_comma + 1 :] # last item in comma-separated list is the encrypted password
-					updated_pw = encryptAES(decryptAES(pw, self.key), updated_key)
-					print('{},{}\n'.format(row[: last_comma], updated_pw), file = updated_password_file)
-					row = password_file.readline().strip()
+		with open('keys.csv') as password_file, open('.keys', 'w') as updated_password_file:
+			for row in password_file:
+				last_comma = row.rfind(',')
+				pw = row[last_comma + 1 :].strip() # last item in comma-separated list is the encrypted password
+				updated_pw = encryptAES(decryptAES(pw, self.key), updated_key)
+				print('{},{}'.format(row[: last_comma], updated_pw), file = updated_password_file)
 		self.key = updated_key # set the new key for AES
 
 		# clean up
@@ -693,6 +690,85 @@ class ChangePassphrase(BaseWindowClass):
 
 		self.parent.quit()
 		self.parent.destroy()
+
+################################################################################
+
+# def locate_row_of_interest(choose_window):
+# 	'''
+# 	Helper function to change, delete or view a password.
+# 	Locates which line of 'keys.csv' has to be changed, deleted or viewed.
+# 	Instantiates Search class and Found class.
+# 	Search class accepts a term to search in 'keys.csv' file.
+# 	Found class chooses one out of the search results.
+#
+# 	Args:
+# 		choose_window: the object whose window is required to create a tk.Toplevel
+#
+# 	Returns:
+# 		string (a row in 'keys.csv') which the user wants to change, delete or view (otherwise, None)
+# 	'''
+
+
+################################################################################
+
+class Search(BaseWindowClass):
+	'''
+	Accept a seach term from the user and search 'keys.csv' for that term.
+	Search only for matching accounts, user IDs and user names (not passwords).
+	'''
+
+	def __init__(self, parent):
+		super().__init__(parent)
+		parent.title('Delete, Change or View a Password')
+		self.search_result = []
+
+		# header
+		head_label = tk.Label(parent, text = 'Search Accounts', font = titlefont)
+		head_label.grid(row = 0, columnspan = 2, padx = 30, pady = (30, 15))
+
+		# sub-header
+		subhead_label = tk.Label(parent, text = 'You may leave the field blank if\nyou want a list of all accounts.')
+		subhead_label.grid(row = 1, columnspan = 2, padx = 30, pady = (0, 15))
+
+		# keyboard instruction
+		inst_label = tk.Label(parent, text = 'Press \'Esc\' to return to the main menu.')
+		inst_label.grid(row = 2, columnspan = 2, padx = 30, pady = (0, 30))
+
+		# search prompt label
+		search_label = tk.Label(parent, text = 'Search Term', font = subtitlefont)
+		search_label.grid(row = 3, column = 0, padx = 30, pady = 15)
+
+		# search prompt entry
+		search_entry = tk.Entry(parent)
+		search_entry.grid(row = 3, column = 1, padx = 30, pady = 15)
+		search_entry.focus()
+
+		# perform the search
+		self.submit = tk.Button(parent, text = 'Search', height = 2, width = 20, command = lambda : self.search_password(search_entry.get()))
+		self.submit.grid(row = 4, columnspan = 2, padx = 30, pady = 30)
+
+	########################################
+
+	def search_password(self, item):
+		'''
+		Locate all rows of 'keys.csv' file which contain the argument string.
+		Each time a match is found, it is appended to 'self.search_result'.
+
+		Args:
+			self: class object
+			item: the string to be searched
+
+		Returns:
+			None
+		'''
+
+		# find the string in 'keys.csv'
+		with open('keys.csv') as password_file:
+			row = password_file.readline().strip()
+			while row != '':
+				if item.lower() in row[: row.rfind(',')].lower():
+					self.search_result.append(row)
+				# row =
 
 ################################################################################
 
