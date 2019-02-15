@@ -23,7 +23,9 @@ import tkinter.messagebox as mb
 titlefont = 'Noto 15 bold' # window head label font
 subtitlefont = 'Noto 10 bold' # font used by label associated with an Entry
 passlength = 18 # length of the random password generated
-phraselength = 0 # minimum passphrase length required while changing it
+phraselength = 0 # minimum passphrase length required while changing passphrase
+pad = 30 # the padding used for tkinter widgets
+h, w = 2, 20 # main button sizes
 
 ################################################################################
 
@@ -48,7 +50,7 @@ def genpass(n):
 
 def show_pass(entry_name):
 	'''
-	Toggle how the contents of the argument (an Entry) are displayed.
+	Toggle how the contents of an Entry are displayed.
 	Change the display mode from asterisks to normal and vice versa.
 
 	Args:
@@ -109,6 +111,38 @@ def decryptAES(ciphertext, key):
 
 ################################################################################
 
+def validation_helper(credentials):
+	'''
+	Validate the entries filled by the user while adding or changing password entries.
+	This function is used in the 'AddPassword' and 'ChangePassword' classes.
+
+	Args:
+		credentials: list of 5 strings [account, user ID, user name, password, confirm password]
+
+	Returns:
+		False (if the credentials are not valid)
+		True (if they are valid)
+	'''
+
+	# check if any field is empty
+	if '' in credentials:
+		mb.showerror('Empty Input', 'One or more fields are still empty. Fill all of them to proceed.')
+		return False
+
+	# check if any of the first three credentials contain a comma
+	if ',' in ''.join(credentials[: 3]):
+		mb.showerror('Invalid Input', 'The \'Account\', \'User ID\' and \'User Name\' fields must not contain commas.')
+		return False
+
+	# compare passwords
+	if credentials[3] != credentials[4]:
+		mb.showerror('Password Mismatch', 'The \'Password\' and \'Confirm Password\' fields do not match.')
+		return False
+
+	return True
+
+################################################################################
+
 class CreateTooltip:
 	'''
 	Display a hint when the mouse hovers over a widget.
@@ -166,7 +200,7 @@ class CreateTooltip:
 
 class BaseWindowClass:
 	'''
-		Base class which will be inherited to display tkinter windows.
+	Base class which will be inherited to display tkinter windows.
 	'''
 
 	def __init__(self, parent):
@@ -189,8 +223,9 @@ class BaseWindowClass:
 		When the user presses 'Return', decide what action to perform.
 		If the widget in focus is a button, invoke its action.
 		Else, invoke the action of the 'submit' button.
-		BaseWindowClass does not have a 'submit' button.
-		But the classes inheriting it will all have a 'submit' button.
+		If the class does not have a 'submit' attribute, do nothing.
+		(The 'Choose' class does not have a 'submit' button.
+		Hence, pressing 'Return' will do nothing if no button is focused.)
 
 		Args:
 			self: class object
@@ -204,7 +239,10 @@ class BaseWindowClass:
 		if isinstance(widget, tk.Button):
 			widget.invoke()
 		else:
-			self.submit.invoke()
+			try:
+				self.submit.invoke()
+			except AttributeError:
+				print('No button selected.')
 
 ################################################################################
 
@@ -222,29 +260,29 @@ class Login(BaseWindowClass):
 
 		# header
 		head_label = tk.Label(parent, text = 'Enter Passphrase', font = titlefont)
-		head_label.grid(row = 0, columnspan = 2, padx = 30, pady = (30, 15))
+		head_label.grid(row = 0, columnspan = 2, padx = pad, pady = (pad, pad / 4))
 
 		# keyboard instruction
 		inst_label = tk.Label(parent, text = 'Press \'Esc\' to quit the application.')
-		inst_label.grid(row = 1, columnspan = 2, padx = 30, pady = (0, 30))
+		inst_label.grid(row = 1, columnspan = 2, padx = pad, pady = (pad / 4, pad / 2))
 
 		# passphrase prompt entry
-		phrase_entry = tk.Entry(parent, show = '*')
-		phrase_entry.grid(row = 2, column = 1, padx = 30, pady = 15)
-		phrase_entry.focus()
+		pp_entry = tk.Entry(parent, show = '*')
+		pp_entry.grid(row = 2, column = 1, padx = pad, pady = pad / 2)
+		pp_entry.focus()
 
 		# toggle passphrase view
-		show_button = tk.Button(parent, text = 'Passphrase', font = subtitlefont, command = lambda : show_pass(phrase_entry))
-		show_button.grid(row = 2, column = 0, padx = 30, pady = 15)
+		show_button = tk.Button(parent, text = 'Passphrase', font = subtitlefont, command = lambda : show_pass(pp_entry))
+		show_button.grid(row = 2, column = 0, padx = pad, pady = pad / 2)
 		CreateTooltip(show_button, 'Show or hide passphrase')
 
 		# display hint
-		hint_button = tk.Button(parent, text = 'Passphrase Hint', height = 2, width = 20, command = self.view_hint)
-		hint_button.grid(row = 3, columnspan = 2, padx = 30, pady = (30, 15))
+		hint_button = tk.Button(parent, text = 'Passphrase Hint', height = h, width = w, command = self.view_hint)
+		hint_button.grid(row = 3, columnspan = 2, padx = pad, pady = (pad / 2, pad / 4))
 
 		# check if password is correct and proceed
-		self.submit = tk.Button(parent, text = 'Log In', height = 2, width = 20, command = lambda : self.validate_phrase(phrase_entry.get()))
-		self.submit.grid(row = 4, columnspan = 2, padx = 30, pady = (15, 30))
+		self.submit = tk.Button(parent, text = 'Log In', height = h, width = w, command = lambda : self.validate_phrase(pp_entry.get()))
+		self.submit.grid(row = 4, columnspan = 2, padx = pad, pady = (pad / 4, pad))
 
 	########################################
 
@@ -272,7 +310,7 @@ class Login(BaseWindowClass):
 
 	########################################
 
-	def validate_phrase(self, phrase):
+	def validate_phrase(self, pp):
 		'''
 		Compare the SHA-512 of the entered passphrase with the stored value.
 		If they are the same, set the SHA-256 of the passphrase as the AES256 key.
@@ -280,25 +318,25 @@ class Login(BaseWindowClass):
 
 		Args:
 			self: class object
-			phrase: passphrase string
+			pp: passphrase string
 
 		Returns:
 			None
 		'''
 
 		# compare the string stored in the file 'hash' with the SHA-512 of 'phrase'
-		phrase_hash = hl.sha512(phrase.encode()).hexdigest()
+		pp_hash = hl.sha512(pp.encode()).hexdigest()
 		with open('hash') as hash_file:
 			expected_hash = hash_file.readline().strip()
-		if phrase_hash != expected_hash:
+		if pp_hash != expected_hash:
 			mb.showerror('Wrong Passphrase', 'The passphrase entered is wrong.')
 			return
 
-		# if the passphrase was correct, close this window and set 'self.AES_key'
+		# if the passphrase was correct, close this window and set 'self.key'
 		# which will be used as the encryption / decryption key for AES
 		self.parent.quit()
 		self.parent.destroy()
-		self.key = hl.sha256(phrase.encode()).digest()
+		self.key = hl.sha256(pp.encode()).digest()
 
 ################################################################################
 
@@ -319,65 +357,42 @@ class Choose(BaseWindowClass):
 
 		# header
 		head_label = tk.Label(parent, text = 'What would you like to do?', font = titlefont)
-		head_label.grid(row = 0, columnspan = 2, padx = 30, pady = (30, 15))
+		head_label.grid(row = 0, columnspan = 2, padx = pad, pady = (pad, pad / 4))
 
 		# keyboard instruction
 		inst_label = tk.Label(parent, text = 'Press \'Esc\' to quit the application.')
-		inst_label.grid(row = 1, columnspan = 2, padx = 30, pady = (0, 30))
+		inst_label.grid(row = 1, columnspan = 2, padx = pad, pady = (pad / 4, pad / 2))
 
 		# add password
-		add_button = tk.Button(parent, text = 'Add a Password', height = 2, width = 20, command = lambda : add_password(self))
-		add_button.grid(row = 2, column = 0, padx = 30, pady = 15)
+		add_button = tk.Button(parent, text = 'Add a Password', height = h, width = w, command = lambda : add_password(self))
+		add_button.grid(row = 2, column = 0, padx = pad, pady = (pad / 2, pad / 4))
 
 		# delete button
-		del_button = tk.Button(parent, text = 'Delete a Password', height = 2, width = 20, command = lambda : delete_password(self))
-		del_button.grid(row = 2, column = 1, padx = 30, pady = 15)
-
-		# change button
-		chg_button = tk.Button(parent, text = 'Change a Password', height = 2, width = 20, command = lambda : change_password(self))
-		chg_button.grid(row = 3, column = 0, padx = 30, pady = 15)
-
-		# view button
-		view_button = tk.Button(parent, text = 'View a Password', height = 2, width = 20, command = lambda : view_password(self))
-		view_button.grid(row = 3, column = 1, padx = 30, pady = 15)
+		del_button = tk.Button(parent, text = 'Delete a Password', height = h, width = w, command = lambda : delete_password(self))
+		del_button.grid(row = 2, column = 1, padx = pad, pady = (pad / 2, pad / 4))
 
 		# change passphrase button
-		chp_button = tk.Button(parent, text = 'Change Passphrase', height = 2, width = 20, command = lambda : change_passphrase(self))
-		chp_button.grid(row = 4, columnspan = 2, padx = 30, pady = (15, 30))
+		cpp_button = tk.Button(parent, text = 'Change a Password', height = h, width = w, command = lambda : change_password(self))
+		cpp_button.grid(row = 3, column = 0, padx = pad, pady = (pad / 4, pad / 4))
+
+		# view button
+		view_button = tk.Button(parent, text = 'View a Password', height = h, width = w, command = lambda : view_password(self))
+		view_button.grid(row = 3, column = 1, padx = pad, pady = (pad / 4, pad / 4))
+
+		# change passphrase button
+		cpw_button = tk.Button(parent, text = 'Change Passphrase', height = h, width = w, command = lambda : change_passphrase(self))
+		cpw_button.grid(row = 4, columnspan = 2, padx = pad, pady = (pad / 4, pad))
 
 	########################################
 
 	def close_button(self, event = None):
 		raise SystemExit(0)
 
-	########################################
-
-	def press_enter(self, event = None):
-		'''
-		When the user presses 'Return', decide what action to perform.
-		Override the inherited method because this window does not have a 'submit' button.
-		Because this window does not have a 'submit' button.
-		Hence, the inherited method will not work.
-		If any of the buttons are in focus, perform the action.
-		Else, do nothing.
-
-		Args:
-			self: class object
-			event: GUI event
-
-		Returns:
-			None
-		'''
-
-		widget = self.parent.focus_get()
-		if isinstance(widget, tk.Button):
-			widget.invoke()
-
 ################################################################################
 
 def add_password(choose_window):
 	'''
-	Wrapper function to instantiate the AddPassword class.
+	Wrapper function to instantiate 'AddPassword' class.
 
 	Args:
 		choose_window: the Choose object whose window has to be hidden before displaying a new window
@@ -390,7 +405,7 @@ def add_password(choose_window):
 	choose_window.parent.withdraw()
 
 	adder = tk.Toplevel(choose_window.parent)
-	AddPassword(adder, choose_window.key)
+	adder_object = AddPassword(adder, choose_window.key)
 	adder.mainloop()
 
 	# unhide the option choosing window
@@ -418,67 +433,67 @@ class AddPassword(BaseWindowClass):
 
 		# header
 		head_label = tk.Label(parent, text = 'Enter Credentials', font = titlefont)
-		head_label.grid(row = 0, columnspan = 2, padx = 30, pady = (30, 15))
+		head_label.grid(row = 0, columnspan = 2, padx = pad, pady = (pad, pad / 2))
 
 		# keyboard instruction
 		inst_label = tk.Label(parent, text = 'Press \'Esc\' to return to the main menu.')
-		inst_label.grid(row = 1, columnspan = 2, padx = 30, pady = (0, 30))
+		inst_label.grid(row = 1, columnspan = 2, padx = pad, pady = (0, pad))
 
 		# account prompt label
 		acc_label = tk.Label(parent, text = 'Account', font = subtitlefont)
-		acc_label.grid(row = 2, column = 0, padx = 30, pady = 15)
+		acc_label.grid(row = 2, column = 0, padx = pad, pady = pad / 2)
 
 		# user ID prompt label
 		uid_label = tk.Label(parent, text = 'User ID (e.g. email)', font = subtitlefont)
-		uid_label.grid(row = 3, column = 0, padx = 30, pady = 15)
+		uid_label.grid(row = 3, column = 0, padx = pad, pady = pad / 2)
 
 		# user name prompt label
 		name_label = tk.Label(parent, text = 'User Name', font = subtitlefont)
-		name_label.grid(row = 4, column = 0, padx = 30, pady = 15)
+		name_label.grid(row = 4, column = 0, padx = pad, pady = pad / 2)
 
 		# account prompt entry
 		acc_entry = tk.Entry(parent, textvariable = self.accvar)
-		acc_entry.grid(row = 2, column = 1, padx = 30, pady = 15)
+		acc_entry.grid(row = 2, column = 1, padx = pad, pady = pad / 2)
 		acc_entry.focus()
 
 		# user ID prompt entry
 		uid_entry = tk.Entry(parent, textvariable = self.uidvar)
-		uid_entry.grid(row = 3, column = 1, padx = 30, pady = 15)
+		uid_entry.grid(row = 3, column = 1, padx = pad, pady = pad / 2)
 
 		# user name prompt entry
 		name_entry = tk.Entry(parent, textvariable = self.namevar)
-		name_entry.grid(row = 4, column = 1, padx = 30, pady = 15)
+		name_entry.grid(row = 4, column = 1, padx = pad, pady = pad / 2)
 
 		# password prompt entry
 		pw_entry = tk.Entry(parent, textvariable = self.pwvar, show = '*')
-		pw_entry.grid(row = 6, column = 1, padx = 30, pady = 15)
+		pw_entry.grid(row = 6, column = 1, padx = pad, pady = pad / 2)
 
 		# confirm password prompt entry
 		cp_entry = tk.Entry(parent, textvariable = self.cpvar, show = '*')
-		cp_entry.grid(row = 7, column = 1, padx = 30, pady = 15)
+		cp_entry.grid(row = 7, column = 1, padx = pad, pady = pad / 2)
 
 		# add the password to the file
-		self.submit = tk.Button(parent, text = 'Add', height = 2, width = 20, command = lambda : self.validate_pw(acc_entry.get(), uid_entry.get(), name_entry.get(), pw_entry.get(), cp_entry.get()))
-		self.submit.grid(row = 8, columnspan = 2, padx = 30, pady = 30)
+		self.submit = tk.Button(parent, text = 'Add', height = h, width = w, command = lambda : self.validate_pw(acc_entry.get(), uid_entry.get(), name_entry.get(), pw_entry.get(), cp_entry.get()))
+		self.submit.grid(row = 8, columnspan = 2, padx = pad, pady = pad)
 
 		# auto-fill password entries
 		autofill_button = tk.Button(parent, text = 'Suggested Password', font = subtitlefont, command = self.set_passwords)
-		autofill_button.grid(row = 5, column = 0, padx = 30, pady = 15)
+		autofill_button.grid(row = 5, column = 0, padx = pad, pady = pad / 2)
 		CreateTooltip(autofill_button, 'Auto-fill the password entries\nbelow with the suggested password')
 
 		# refresh suggested password
-		refresh_button = tk.Button(parent, textvariable = self.plvar, command = lambda : self.plvar.set(genpass(passlength)), width = 30)
-		refresh_button.grid(row = 5, column = 1, padx = 30, pady = 15)
+		refresh_button = tk.Button(parent, textvariable = self.plvar, command = lambda : self.plvar.set(genpass(passlength)), width = pad)
+		refresh_button.grid(row = 5, column = 1, padx = pad, pady = pad / 2)
 		CreateTooltip(refresh_button, 'Re-generate suggested password')
 
 		# toggle password view
 		pass_button = tk.Button(parent, text = 'Password', font = subtitlefont, command = lambda : show_pass(pw_entry))
-		pass_button.grid(row = 6, column = 0, padx = 30, pady = 15)
+		pass_button.grid(row = 6, column = 0, padx = pad, pady = pad / 2)
 		CreateTooltip(pass_button, 'Show or hide password')
 
 		# toggle confirm password view
 		cpass_button = tk.Button(parent, text = 'Confirm Password', font = subtitlefont, command = lambda : show_pass(cp_entry))
-		cpass_button.grid(row = 7, column = 0, padx = 30, pady = 15)
+		cpass_button.grid(row = 7, column = 0, padx = pad, pady = pad / 2)
 		CreateTooltip(cpass_button, 'Show or hide password')
 
 	########################################
@@ -523,46 +538,16 @@ class AddPassword(BaseWindowClass):
 		acc, uid, name, pw, cp = credentials
 
 		# confirm and add password
-		response = mb.askyesno('Confirmation', 'Add this password?', icon = 'warning')
+		response = mb.askyesno('Confirmation', 'Add password?', icon = 'warning')
 		if response == False:
 			return
 		with open('keys.csv', 'a') as password_file:
 			print('{},{},{},{}'.format(acc, uid, name, encryptAES(pw, self.key)), file = password_file)
-			mb.showinfo('Password Added', 'Password for {} was added successfully.'.format(name))
+
+		mb.showinfo('Password Added', 'Password for {} was added successfully.'.format(name))
 
 		self.parent.quit()
 		self.parent.destroy()
-
-################################################################################
-
-def validation_helper(credentials):
-	'''
-	Validate the entries filled by the user while adding or changing password entries.
-
-	Args:
-		credentials: list of account, user ID, user name, password, confirm password strings
-
-	Returns:
-		False (if the credentials as not valid)
-		True (if they are valid)
-	'''
-
-	# check if any field is empty
-	if '' in credentials:
-		mb.showerror('Empty Input', 'One or more fields are still empty. Fill all of them to proceed.')
-		return False
-
-	# check if any of the first three credentials contain a comma
-	if ',' in ''.join(credentials[: 3]):
-		mb.showerror('Invalid Input', 'The \'Account\', \'User ID\' and \'User Name\' fields must not contain commas.')
-		return False
-
-	# compare passwords
-	if credentials[3] != credentials[4]:
-		mb.showerror('Password Mismatch', 'The \'Password\' and \'Confirm Password\' fields do not match.')
-		return False
-
-	return True
 
 ################################################################################
 
@@ -581,9 +566,9 @@ def change_passphrase(choose_window):
 	choose_window.parent.withdraw()
 
 	updater = tk.Toplevel(choose_window.parent)
-	updater_ChangePassphrase = ChangePassphrase(updater, choose_window.key)
+	updater_object = ChangePassphrase(updater, choose_window.key)
 	updater.mainloop()
-	choose_window.key = updater_ChangePassphrase.key # set the updated AES_key
+	choose_window.key = updater_object.key # set the updated key
 
 	# unhide the option choosing window
 	choose_window.parent.deiconify()
@@ -608,45 +593,45 @@ class ChangePassphrase(BaseWindowClass):
 
 		# header
 		head_label = tk.Label(parent, text = 'Enter new Passphrase', font = titlefont)
-		head_label.grid(row = 0, columnspan = 2, padx = 30, pady = (30, 15))
+		head_label.grid(row = 0, columnspan = 2, padx = pad, pady = (pad, pad / 2))
 
 		# sub-header
 		subhead_label = tk.Label(parent, text = 'Use a long easy-to-remember passphrase.\nAvoid a short random one. Include special characters!')
-		subhead_label.grid(row = 1, columnspan = 2, padx = 30, pady = (0, 15))
+		subhead_label.grid(row = 1, columnspan = 2, padx = pad, pady = (0, pad / 2))
 
 		# keyboard instruction
 		inst_label = tk.Label(parent, text = 'Press \'Esc\' to return to the main menu.')
-		inst_label.grid(row = 2, columnspan = 2, padx = 30, pady = (0, 30))
+		inst_label.grid(row = 2, columnspan = 2, padx = pad, pady = (0, pad))
 
 		# passphrase hint prompt label
 		hint_label = tk.Label(parent, text = 'Passphrase Hint', font = subtitlefont)
-		hint_label.grid(row = 5, column = 0, padx = 30, pady = 15)
+		hint_label.grid(row = 5, column = 0, padx = pad, pady = pad / 2)
 
 		# passphrase prompt entry
 		pp_entry = tk.Entry(parent, show = '*')
-		pp_entry.grid(row = 3, column = 1, padx = 30, pady = 15)
+		pp_entry.grid(row = 3, column = 1, padx = pad, pady = pad / 2)
 		pp_entry.focus()
 
 		# confirm passphrase prompt entry
 		cp_entry = tk.Entry(parent, show = '*')
-		cp_entry.grid(row = 4, column = 1, padx = 30, pady = 15)
+		cp_entry.grid(row = 4, column = 1, padx = pad, pady = pad / 2)
 
 		# passphrase hint prompt entry
 		hint_entry = tk.Entry(parent)
-		hint_entry.grid(row = 5, column = 1, padx = 30, pady = 15)
+		hint_entry.grid(row = 5, column = 1, padx = pad, pady = pad / 2)
 
 		# change the passphrase
-		self.submit = tk.Button(parent, text = 'Change', height = 2, width = 20, command = lambda : self.update_phrase(pp_entry.get(), cp_entry.get(), hint_entry.get()))
-		self.submit.grid(row = 6, columnspan = 2, padx = 30, pady = 30)
+		self.submit = tk.Button(parent, text = 'Change', height = h, width = w, command = lambda : self.update_phrase(pp_entry.get(), cp_entry.get(), hint_entry.get()))
+		self.submit.grid(row = 6, columnspan = 2, padx = pad, pady = pad)
 
 		# toggle passphrase view
 		pp_button = tk.Button(parent, text = 'New Passphrase', font = subtitlefont, command = lambda : show_pass(pp_entry))
-		pp_button.grid(row = 3, column = 0, padx = 30, pady = 15)
+		pp_button.grid(row = 3, column = 0, padx = pad, pady = pad / 2)
 		CreateTooltip(pp_button, 'Show or hide passphrase')
 
 		# toggle confirm passphrase view
 		cp_button = tk.Button(parent, text = 'Confirm Passphrase', font = subtitlefont, command = lambda : show_pass(cp_entry))
-		cp_button.grid(row = 4, column = 0, padx = 30, pady = 15)
+		cp_button.grid(row = 4, column = 0, padx = pad, pady = pad / 2)
 		CreateTooltip(cp_button, 'Show or hide passphrase')
 
 	########################################
@@ -674,7 +659,7 @@ class ChangePassphrase(BaseWindowClass):
 
 		# compare passphrases
 		if pp != cp:
-			mb.showerror('Passphrase Mismatch', 'The \'Passphrase\' and \'Confirm Passphrase\' fields do not match.')
+			mb.showerror('Passphrase Mismatch', 'The \'New Passphrase\' and \'Confirm Passphrase\' fields do not match.')
 			return
 
 		# passphrase hint is necessary
@@ -735,23 +720,23 @@ def locate_row_of_interest(choose_window):
 
 	# instantiate Search class to accept a search term
 	locate = tk.Toplevel(choose_window.parent)
-	locate_Search = Search(locate)
+	locate_object = Search(locate)
 	locate.mainloop()
 
 	# list of all rows matching the search
 	# if the user closed the 'locate' window without searching, this will be an empty list
-	found_rows = locate_Search.search_result
+	found_rows = locate_object.search_result
 	if found_rows == []:
 		return None
 
 	# instantiate Found class to display search results
 	select_row = tk.Toplevel(choose_window.parent)
-	select_row_Found = Found(select_row, found_rows)
+	select_row_object = Found(select_row, found_rows)
 	select_row.mainloop()
 
 	# find what the user chose
 	# if the user closed the 'select_row' window, this will be an empty string
-	chosen_row = select_row_Found.row_of_interest
+	chosen_row = select_row_object.row_of_interest
 	if chosen_row == '':
 		return None
 
@@ -772,28 +757,28 @@ class Search(BaseWindowClass):
 
 		# header
 		head_label = tk.Label(parent, text = 'Search Accounts', font = titlefont)
-		head_label.grid(row = 0, columnspan = 2, padx = 30, pady = (30, 15))
+		head_label.grid(row = 0, columnspan = 2, padx = pad, pady = (pad, pad / 2))
 
 		# sub-header
 		subhead_label = tk.Label(parent, text = 'You may leave the field blank if\nyou want a list of all accounts.')
-		subhead_label.grid(row = 1, columnspan = 2, padx = 30, pady = (0, 15))
+		subhead_label.grid(row = 1, columnspan = 2, padx = pad, pady = (0, pad / 2))
 
 		# keyboard instruction
 		inst_label = tk.Label(parent, text = 'Press \'Esc\' to return to the main menu.')
-		inst_label.grid(row = 2, columnspan = 2, padx = 30, pady = (0, 30))
+		inst_label.grid(row = 2, columnspan = 2, padx = pad, pady = (0, pad))
 
 		# search prompt label
 		search_label = tk.Label(parent, text = 'Search Term', font = subtitlefont)
-		search_label.grid(row = 3, column = 0, padx = 30, pady = 15)
+		search_label.grid(row = 3, column = 0, padx = pad, pady = pad / 2)
 
 		# search prompt entry
 		search_entry = tk.Entry(parent)
-		search_entry.grid(row = 3, column = 1, padx = 30, pady = 15)
+		search_entry.grid(row = 3, column = 1, padx = pad, pady = pad / 2)
 		search_entry.focus()
 
 		# perform the search
-		self.submit = tk.Button(parent, text = 'Search', height = 2, width = 20, command = lambda : self.search_password(search_entry.get()))
-		self.submit.grid(row = 4, columnspan = 2, padx = 30, pady = 30)
+		self.submit = tk.Button(parent, text = 'Search', height = h, width = w, command = lambda : self.search_password(search_entry.get()))
+		self.submit.grid(row = 4, columnspan = 2, padx = pad, pady = pad)
 
 	########################################
 
@@ -842,11 +827,11 @@ class Found(BaseWindowClass):
 
 		# header
 		head_label = tk.Label(parent, text = 'Select an Account', font = titlefont)
-		head_label.grid(row = 0, columnspan = 4, padx = 30, pady = (30, 15))
+		head_label.grid(row = 0, columnspan = 4, padx = pad, pady = (pad, pad / 2))
 
 		# keyboard instruction
 		inst_label = tk.Label(parent, text = 'Press \'Esc\' to return to the main menu.')
-		inst_label.grid(row = 1, columnspan = 4, padx = 30, pady = (0, 30))
+		inst_label.grid(row = 1, columnspan = 4, padx = pad, pady = (0, pad))
 
 		# radio button selection variable
 		selection = tk.IntVar(value = 2)
@@ -859,23 +844,23 @@ class Found(BaseWindowClass):
 
 			# radio button
 			choice_rbutton = tk.Radiobutton(parent, variable = selection, value = i)
-			choice_rbutton.grid(row = i, column = 0, padx = (30, 0))
+			choice_rbutton.grid(row = i, column = 0, padx = (pad, 0))
 
 			# account label
 			acc_label = tk.Label(parent, text = acc)
-			acc_label.grid(row = i, column = 1, padx = (0, 15))
+			acc_label.grid(row = i, column = 1, padx = (0, pad / 2))
 
 			# user ID label
 			uid_label = tk.Label(parent, text = uid)
-			uid_label.grid(row = i, column = 2, padx = (0, 15))
+			uid_label.grid(row = i, column = 2, padx = (0, pad / 2))
 
 			# user name label
 			name_label = tk.Label(parent, text = name)
-			name_label.grid(row = i, column = 3, padx = (0, 15))
+			name_label.grid(row = i, column = 3, padx = (0, pad / 2))
 
 		# make selection
-		self.submit = tk.Button(parent, text = 'Select', height = 2, width = 20, command = lambda : self.get_password_line(selection.get()))
-		self.submit.grid(row = i + 1, columnspan = 4, padx = 30, pady = 30)
+		self.submit = tk.Button(parent, text = 'Select', height = h, width = w, command = lambda : self.get_password_line(selection.get()))
+		self.submit.grid(row = i + 1, columnspan = 4, padx = pad, pady = pad)
 
 	########################################
 
@@ -918,7 +903,7 @@ def delete_password(choose_window):
 		choose_window.parent.deiconify() # unhide the option choosing window
 		return
 	deleter = tk.Toplevel(choose_window.parent)
-	DeletePassword(deleter, row_of_interest)
+	deleter_object = DeletePassword(deleter, row_of_interest)
 	deleter.mainloop()
 
 	# unhide the option choosing window
@@ -942,43 +927,43 @@ class DeletePassword(BaseWindowClass):
 
 		# header
 		head_label = tk.Label(parent, text = 'Confirm Delete', font = titlefont)
-		head_label.grid(row = 0, columnspan = 2, padx = 30, pady = (30, 15))
+		head_label.grid(row = 0, columnspan = 2, padx = pad, pady = (pad, pad / 2))
 
 		# sub-header
 		subhead_label = tk.Label(parent, text = 'Confirm that you want to delete the password\nassociated with this account. This operation is\nirreversible.')
-		subhead_label.grid(row = 1, columnspan = 2, padx = 30, pady = (0, 15))
+		subhead_label.grid(row = 1, columnspan = 2, padx = pad, pady = (0, pad / 2))
 
 		# keyboard instruction
 		inst_label = tk.Label(parent, text = 'Press \'Esc\' to return to the main menu.')
-		inst_label.grid(row = 2, columnspan = 2, padx = 30, pady = (0, 30))
+		inst_label.grid(row = 2, columnspan = 2, padx = pad, pady = (0, pad))
 
 		# account question label
 		acc_q_label = tk.Label(parent, text = 'Account', font = subtitlefont)
-		acc_q_label.grid(row = 3, column = 0, padx = 30, pady = 15)
+		acc_q_label.grid(row = 3, column = 0, padx = pad, pady = pad / 2)
 
 		# account answer label
 		acc_a_label = tk.Label(parent, text = acc)
-		acc_a_label.grid(row = 3, column = 1, padx = 30, pady = 15)
+		acc_a_label.grid(row = 3, column = 1, padx = pad, pady = pad / 2)
 
 		# user ID question label
 		uid_q_label = tk.Label(parent, text = 'User ID', font = subtitlefont)
-		uid_q_label.grid(row = 4, column = 0, padx = 30, pady = 15)
+		uid_q_label.grid(row = 4, column = 0, padx = pad, pady = pad / 2)
 
 		# user ID answer label
 		uid_a_label = tk.Label(parent, text = uid)
-		uid_a_label.grid(row = 4, column = 1, padx = 30, pady = 15)
+		uid_a_label.grid(row = 4, column = 1, padx = pad, pady = pad / 2)
 
 		# user name question label
 		name_q_label = tk.Label(parent, text = 'User Name', font = subtitlefont)
-		name_q_label.grid(row = 5, column = 0, padx = 30, pady = 15)
+		name_q_label.grid(row = 5, column = 0, padx = pad, pady = pad / 2)
 
 		# user name answer label
 		name_a_label = tk.Label(parent, text = name)
-		name_a_label.grid(row = 5, column = 1, padx = 30, pady = 15)
+		name_a_label.grid(row = 5, column = 1, padx = pad, pady = pad / 2)
 
 		# delete the password line
-		self.submit = tk.Button(parent, text = 'Delete', height = 2, width = 20, command = self.remove_pass)
-		self.submit.grid(row = 6, columnspan = 2, padx = 30, pady = 30)
+		self.submit = tk.Button(parent, text = 'Delete', height = h, width = w, command = self.remove_pass)
+		self.submit.grid(row = 6, columnspan = 2, padx = pad, pady = pad)
 
 	########################################
 
@@ -996,7 +981,7 @@ class DeletePassword(BaseWindowClass):
 		'''
 
 		# confirm and delete password
-		response = mb.askyesno('Confirmation', 'Delete this password? This process cannot be undone.', icon = 'warning')
+		response = mb.askyesno('Confirmation', 'Delete password? This process cannot be undone.', icon = 'warning')
 		if response == False:
 			return
 		with open('keys.csv') as password_file, open('.keys', 'w') as updated_password_file:
@@ -1009,7 +994,7 @@ class DeletePassword(BaseWindowClass):
 		os.remove('keys.csv')
 		os.rename('.keys', 'keys.csv')
 
-		mb.showinfo('Password Deleted', 'The password was deleted successfully.')
+		mb.showinfo('Password Deleted', 'Password was deleted successfully.')
 
 		self.parent.quit()
 		self.parent.destroy()
@@ -1036,7 +1021,7 @@ def change_password(choose_window):
 		choose_window.parent.deiconify() # unhide the option choosing window
 		return
 	changer = tk.Toplevel(choose_window.parent)
-	ChangePassword(changer, choose_window.key, row_of_interest)
+	changer_object = ChangePassword(changer, choose_window.key, row_of_interest)
 	changer.mainloop()
 
 	# unhide the option choosing window
@@ -1094,7 +1079,7 @@ class ChangePassword(AddPassword):
 		acc, uid, name, pw, cp = credentials
 
 		# confirm and add password
-		response = mb.askyesno('Confirmation', 'Change this password?', icon = 'warning')
+		response = mb.askyesno('Confirmation', 'Change password?', icon = 'warning')
 		if response == False:
 			return
 		with open('keys.csv') as password_file, open('.keys', 'w') as updated_password_file:
@@ -1116,22 +1101,155 @@ class ChangePassword(AddPassword):
 
 ################################################################################
 
+def view_password(choose_window):
+	'''
+	Wrapper function to instantiate the ViewPassword class.
+
+	Args:
+		choose_window: the Choose object whose window has to be hidden before displaying a new window
+
+	Returns:
+		None
+	'''
+
+	# hide the option choosing window
+	choose_window.parent.withdraw()
+
+	# obtain the row containing the password to be viewed
+	row_of_interest = locate_row_of_interest(choose_window)
+	if row_of_interest is None:
+		choose_window.parent.deiconify()
+		return
+	viewer = tk.Toplevel(choose_window.parent)
+	viewer_object = ViewPassword(viewer, choose_window.key, row_of_interest)
+	viewer.mainloop()
+
+	# unhide the option choosing window
+	choose_window.parent.deiconify()
+
+################################################################################
+
+class ViewPassword(BaseWindowClass):
+	'''
+	Display a password in raw form.
+	'''
+
+	def __init__(self, parent, key, row_of_interest):
+		super().__init__(parent)
+		parent.title('View a Password')
+
+		# rename credentials for convenience
+		acc, uid, name, pw = row_of_interest.split(',')
+
+		# header
+		head_label = tk.Label(parent, text = 'View Credentials', font = titlefont)
+		head_label.grid(row = 0, columnspan = 2, padx = pad, pady = (pad, pad / 2))
+
+		# sub-header
+		subhead_label = tk.Label(parent, text = 'Your credentials are as shown.')
+		subhead_label.grid(row = 1, columnspan = 2, padx = pad, pady = (0, pad))
+
+		# account question label
+		acc_q_label = tk.Label(parent, text = 'Account', font = subtitlefont)
+		acc_q_label.grid(row = 2, column = 0, padx = pad, pady = pad / 2)
+
+		# account answer label
+		acc_a_label = tk.Label(parent, text = acc)
+		acc_a_label.grid(row = 2, column = 1, padx = pad, pady = pad / 2)
+
+		# user ID question label
+		uid_q_label = tk.Label(parent, text = 'User ID', font = subtitlefont)
+		uid_q_label.grid(row = 3, column = 0, padx = pad, pady = pad / 2)
+
+		# user ID answer label
+		uid_a_label = tk.Label(parent, text = uid)
+		uid_a_label.grid(row = 3, column = 1, padx = pad, pady = pad / 2)
+
+		# user name question label
+		name_q_label = tk.Label(parent, text = 'User Name', font = subtitlefont)
+		name_q_label.grid(row = 4, column = 0, padx = pad, pady = pad / 2)
+
+		# user name answer label
+		name_a_label = tk.Label(parent, text = name)
+		name_a_label.grid(row = 4, column = 1, padx = pad, pady = pad / 2)
+
+		# password question label
+		pw_q_label = tk.Label(parent, text = 'Password', font = subtitlefont)
+		pw_q_label.grid(row = 5, column = 0, padx = pad, pady = pad / 2)
+
+		# password answer label
+		pw_a_label = tk.Label(parent, text = decryptAES(pw, key))
+		pw_a_label.grid(row = 5, column = 1, padx = pad, pady = pad / 2)
+
+		# return to main menu
+		self.submit = tk.Button(parent, text = 'Done', height = h, width = w, command = self.close_button)
+		self.submit.grid(row = 6, columnspan = 2, padx = pad, pady = pad)
+
+################################################################################
+
+def handle_missing_files(hash_exists, keys_exists):
+	'''
+	Create the files which are missing, 'keys.csv' and 'hash'.
+	Interpret what to do if one already exists, but not the other.
+	If both are present, do nothing.
+
+	Args:
+		hash_exists: boolean, whether 'hash' file exists
+		keys_exists: boolean, whether 'keys.csv' file exists
+
+	Returns:
+		None
+	'''
+
+	# both present
+	if hash_exists and keys_exists:
+		return
+
+	# create 'keys.csv' if it is missing
+	if not keys_exists:
+		open('keys.csv', 'w').close()
+
+	# phantom window
+	# required to show the messagebox without another window popping up
+	root = tk.Tk()
+	root.withdraw()
+
+	# at this point, 'keys.csv' exists for sure, because it was created, as seen above
+	# if 'keys.csv' is not empty, it means I didn't create it (it was already present)
+	# in that case, 'hash' file does not exist
+	# if it did, the first 'if' condition would have been executed
+	# so, terminate the program, because without 'hash', the contents of 'keys.csv' cannot be used
+	if os.stat('keys.csv').st_size:
+		mb.showerror('Missing File', 'The file \'hash\' is missing. It is required to log in to the application. Without it, your password file \'keys.csv\' is unusable.')
+		raise SystemExit(1)
+
+	# at this point, 'keys.csv' exists and is empty
+	# if 'hash' is missing, create it with the default contents
+	if not hash_exists:
+		response = mb.askyesno('First Time User?', 'The file \'hash\' is missing. It is required to log in to the application. It will be created with \'root\' as the default passphrase.', icon = 'warning')
+		if response == False:
+			raise SystemExit(0)
+		with open('hash', 'w') as hash_file:
+			print(hl.sha512('root'.encode()).hexdigest(), file = hash_file)
+			print('The default passphrase is \'root\'.', file = hash_file)
+
+	# close the phantom window
+	root.quit()
+	root.destroy()
+
+################################################################################
+
 if __name__ == '__main__':
 
-	# x = 'srbsedfvvgedvgdvfoemxpuifbhasch,widj'
-	# k = hl.sha256('avfegbsdvge'.encode()).digest()
-	# y = encryptAES(x, k)
-	# z = decryptAES(y, k)
-	# print(x)
-	# print(y)
-	# print(z)
-	# print(k)
-	# raise SystemExit
+	# take care of the possibility of 'hash' or 'keys.csv' being missing
+	handle_missing_files(os.path.isfile('hash'), os.path.isfile('keys.csv'))
 
-	root = tk.Tk()
-	root_Login = Login(root)
-	root.mainloop()
+	# window to enter passphrase
+	login = tk.Tk()
+	login_object = Login(login)
+	login.mainloop()
 
-	branch = tk.Tk()
-	branch_Choose = Choose(branch, root_Login.key)
-	branch.mainloop()
+	# window to make a selection
+	choose = tk.Tk()
+	choose_object = Choose(choose, login_object.key)
+	choose.mainloop()
