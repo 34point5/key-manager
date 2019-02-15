@@ -371,17 +371,17 @@ class Choose(BaseWindowClass):
 		del_button = tk.Button(parent, text = 'Delete a Password', height = h, width = w, command = lambda : delete_password(self))
 		del_button.grid(row = 2, column = 1, padx = pad, pady = (pad / 2, pad / 4))
 
-		# change passphrase button
-		cpp_button = tk.Button(parent, text = 'Change a Password', height = h, width = w, command = lambda : change_password(self))
-		cpp_button.grid(row = 3, column = 0, padx = pad, pady = pad / 4)
+		# change password button
+		cpw_button = tk.Button(parent, text = 'Change a Password', height = h, width = w, command = lambda : change_password(self))
+		cpw_button.grid(row = 3, column = 0, padx = pad, pady = pad / 4)
 
 		# view button
 		view_button = tk.Button(parent, text = 'View a Password', height = h, width = w, command = lambda : view_password(self))
 		view_button.grid(row = 3, column = 1, padx = pad, pady = pad / 4)
 
 		# change passphrase button
-		cpw_button = tk.Button(parent, text = 'Change Passphrase', height = h, width = w, command = lambda : change_passphrase(self))
-		cpw_button.grid(row = 4, columnspan = 2, padx = pad, pady = (pad / 4, pad))
+		cpp_button = tk.Button(parent, text = 'Change Passphrase', height = h, width = w, command = lambda : change_passphrase(self))
+		cpp_button.grid(row = 4, columnspan = 2, padx = pad, pady = (pad / 4, pad))
 
 	########################################
 
