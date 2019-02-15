@@ -503,7 +503,7 @@ class AddPassword(BaseWindowClass):
 		'''
 		Check whether the credentials provided by the user are appropriate.
 		The account, user ID, user name and password entries must not be empty.
-		Both password entries mst have the same string.
+		Both password entries must have the same string.
 		There must be no comma in the account, user ID and user name entries.
 
 		Args:
@@ -514,23 +514,13 @@ class AddPassword(BaseWindowClass):
 			None
 		'''
 
-		# check if any field is empty
-		if '' in credentials:
-			mb.showerror('Empty Input', 'One or more fields are still empty. Fill all of them to proceed.')
-			return
-
-		# check if any of the first three credentials contain a comma
-		if ',' in ''.join(credentials[: 3]):
-			mb.showerror('Invalid Input', 'The \'Account\', \'User ID\' and \'User Name\' fields must not contain commas.')
+		# check if the credentials are valid
+		valid = validation_helper(credentials)
+		if valid == False:
 			return
 
 		# rename credentials for convenience
 		acc, uid, name, pw, cp = credentials
-
-		# compare passwords
-		if pw != cp:
-			mb.showerror('Password Mismatch', 'The \'Password\' and \'Confirm Password\' fields do not match.')
-			return
 
 		# confirm and add password
 		response = mb.askyesno('Confirmation', 'Add this password?', icon = 'warning')
@@ -542,6 +532,37 @@ class AddPassword(BaseWindowClass):
 
 		self.parent.quit()
 		self.parent.destroy()
+
+################################################################################
+
+def validation_helper(credentials):
+	'''
+	Validate the entries filled by the user while adding or changing password entries.
+
+	Args:
+		credentials: list of account, user ID, user name, password, confirm password strings
+
+	Returns:
+		False (if the credentials as not valid)
+		True (if they are valid)
+	'''
+
+	# check if any field is empty
+	if '' in credentials:
+		mb.showerror('Empty Input', 'One or more fields are still empty. Fill all of them to proceed.')
+		return False
+
+	# check if any of the first three credentials contain a comma
+	if ',' in ''.join(credentials[: 3]):
+		mb.showerror('Invalid Input', 'The \'Account\', \'User ID\' and \'User Name\' fields must not contain commas.')
+		return False
+
+	# compare passwords
+	if credentials[3] != credentials[4]:
+		mb.showerror('Password Mismatch', 'The \'Password\' and \'Confirm Password\' fields do not match.')
+		return False
+
+	return True
 
 ################################################################################
 
@@ -914,6 +935,7 @@ class DeletePassword(BaseWindowClass):
 	def __init__(self, parent, row_of_interest):
 		super().__init__(parent)
 		parent.title('Delete a Password')
+		self.row_of_interest = row_of_interest
 
 		# rename the comma-separated items for convenience
 		acc, uid, name, pw = row_of_interest.split(',')
@@ -955,12 +977,12 @@ class DeletePassword(BaseWindowClass):
 		name_a_label.grid(row = 5, column = 1, padx = 30, pady = 15)
 
 		# delete the password line
-		self.submit = tk.Button(parent, text = 'Delete', height = 2, width = 20, command = lambda : self.remove_pass(row_of_interest))
+		self.submit = tk.Button(parent, text = 'Delete', height = 2, width = 20, command = self.remove_pass)
 		self.submit.grid(row = 6, columnspan = 2, padx = 30, pady = 30)
 
 	########################################
 
-	def remove_pass(self, row_of_interest):
+	def remove_pass(self):
 		'''
 		Copy all lines in 'keys.csv' (except the line to be deleted) to a new file.
 		Then rename the new file to 'keys.csv', thus deleting the password the user wanted to delete.
@@ -980,7 +1002,7 @@ class DeletePassword(BaseWindowClass):
 		with open('keys.csv') as password_file, open('.keys', 'w') as updated_password_file:
 			for row in password_file:
 				row = row.strip()
-				if row != row_of_interest:
+				if row != self.row_of_interest:
 					print(row, file = updated_password_file)
 
 		# clean up
@@ -1031,6 +1053,7 @@ class ChangePassword(AddPassword):
 	def __init__(self, parent, key, row_of_interest):
 		super().__init__(parent, key)
 		parent.title('Change a Password')
+		self.row_of_interest = row_of_interest
 
 		# rename the comma-separated items for convenience
 		acc, uid, name, pw = row_of_interest.split(',')
@@ -1044,6 +1067,52 @@ class ChangePassword(AddPassword):
 		# change the text on the 'submit' button, which is 'Add' because of inheritance
 		# it should be 'Change' to reflect what this class is doing
 		self.submit['text'] = 'Change'
+
+	########################################
+
+	def validate_pw(self, *credentials):
+		'''
+		Check whether the credentials provided by the user are appropriate.
+		The account, user ID, user name and password entries must not be empty.
+		Both password entries must have the same string.
+		There must be no comma in the account, user ID and user name entries.
+
+		Args:
+			self: class object
+			credentials: list of credential strings the user entered
+
+		Returns:
+			None
+		'''
+
+		# check if the credentials are valid
+		valid = validation_helper(credentials)
+		if valid == False:
+			return
+
+		# rename credentials for convenience
+		acc, uid, name, pw, cp = credentials
+
+		# confirm and add password
+		response = mb.askyesno('Confirmation', 'Change this password?', icon = 'warning')
+		if response == False:
+			return
+		with open('keys.csv') as password_file, open('.keys', 'w') as updated_password_file:
+			for row in password_file:
+				row = row.strip()
+				if row != self.row_of_interest:
+					print(row, file = updated_password_file)
+				else:
+					print('{},{},{},{}'.format(acc, uid, name, encryptAES(pw, self.key)), file = updated_password_file)
+
+		# clean up
+		os.remove('keys.csv')
+		os.rename('.keys', 'keys.csv')
+
+		mb.showinfo('Password Changed', 'Password for {} was changed successfully.'.format(name))
+
+		self.parent.quit()
+		self.parent.destroy()
 
 ################################################################################
 
