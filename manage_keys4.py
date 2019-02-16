@@ -201,6 +201,12 @@ class CreateTooltip:
 class BaseWindowClass:
 	'''
 	Base class which will be inherited to display tkinter windows.
+	Important note!
+	The first Entry in any class which inherits 'BaseWindowClass' should have focus.
+	But when a messagebox is displayed, the focus is lost.
+	After the message box is displayed, I must focus the Entry again.
+	To access the Entry, I make it a class member variable.
+	For instance, pp_entry in 'Login' class.
 	'''
 
 	def __init__(self, parent):
@@ -209,6 +215,8 @@ class BaseWindowClass:
 		parent.protocol('WM_DELETE_WINDOW', self.close_button)
 		parent.bind('<Escape>', self.close_button)
 		parent.bind('<Return>', self.press_enter)
+		parent.iconbitmap(r'C:\Documents and Settings\34.5\key-manager\wpm.ico')
+		parent.focus_force() # always steal focus when created
 
 	########################################
 
@@ -267,12 +275,12 @@ class Login(BaseWindowClass):
 		inst_label.grid(row = 1, columnspan = 2, padx = pad, pady = (pad / 4, pad / 2))
 
 		# passphrase prompt entry
-		pp_entry = tk.Entry(parent, show = '*')
-		pp_entry.grid(row = 2, column = 1, padx = pad, pady = pad / 2)
-		pp_entry.focus()
+		self.pp_entry = tk.Entry(parent, show = '*')
+		self.pp_entry.grid(row = 2, column = 1, padx = pad, pady = pad / 2)
+		self.pp_entry.focus()
 
 		# toggle passphrase view
-		show_button = tk.Button(parent, text = 'Passphrase', font = subtitlefont, command = lambda : show_pass(pp_entry))
+		show_button = tk.Button(parent, text = 'Passphrase', font = subtitlefont, command = lambda : show_pass(self.pp_entry))
 		show_button.grid(row = 2, column = 0, padx = pad, pady = pad / 2)
 		CreateTooltip(show_button, 'Show or hide passphrase')
 
@@ -281,7 +289,7 @@ class Login(BaseWindowClass):
 		hint_button.grid(row = 3, columnspan = 2, padx = pad, pady = (pad / 2, pad / 4))
 
 		# check if password is correct and proceed
-		self.submit = tk.Button(parent, text = 'Log In', height = h, width = w, command = lambda : self.validate_phrase(pp_entry.get()))
+		self.submit = tk.Button(parent, text = 'Log In', height = h, width = w, command = lambda : self.validate_phrase(self.pp_entry.get()))
 		self.submit.grid(row = 4, columnspan = 2, padx = pad, pady = (pad / 4, pad))
 
 	########################################
@@ -307,6 +315,8 @@ class Login(BaseWindowClass):
 		with open('hash') as hash_file:
 			hint = hash_file.readlines()[1].strip()
 			mb.showinfo('Passphrase Hint', hint)
+			self.parent.focus_force()
+			self.pp_entry.focus()
 
 	########################################
 
@@ -330,6 +340,8 @@ class Login(BaseWindowClass):
 			expected_hash = hash_file.readline().strip()
 		if pp_hash != expected_hash:
 			mb.showerror('Wrong Passphrase', 'The passphrase entered is wrong.')
+			self.parent.focus_force()
+			self.pp_entry.focus()
 			return
 
 		# if the passphrase was correct, close this window and set 'self.key'
@@ -410,6 +422,7 @@ def add_password(choose_window):
 
 	# unhide the option choosing window
 	choose_window.parent.deiconify()
+	choose_window.parent.focus_force()
 
 ################################################################################
 
@@ -452,9 +465,9 @@ class AddPassword(BaseWindowClass):
 		name_label.grid(row = 4, column = 0, padx = pad, pady = (pad / 4, pad / 2))
 
 		# account prompt entry
-		acc_entry = tk.Entry(parent, textvariable = self.accvar)
-		acc_entry.grid(row = 2, column = 1, padx = pad, pady = (pad / 2, pad / 4))
-		acc_entry.focus()
+		self.acc_entry = tk.Entry(parent, textvariable = self.accvar)
+		self.acc_entry.grid(row = 2, column = 1, padx = pad, pady = (pad / 2, pad / 4))
+		self.acc_entry.focus()
 
 		# user ID prompt entry
 		uid_entry = tk.Entry(parent, textvariable = self.uidvar)
@@ -473,7 +486,7 @@ class AddPassword(BaseWindowClass):
 		cp_entry.grid(row = 7, column = 1, padx = pad, pady = (pad / 4, pad / 2))
 
 		# add the password to the file
-		self.submit = tk.Button(parent, text = 'Add', height = h, width = w, command = lambda : self.validate_pw(acc_entry.get(), uid_entry.get(), name_entry.get(), pw_entry.get(), cp_entry.get()))
+		self.submit = tk.Button(parent, text = 'Add', height = h, width = w, command = lambda : self.validate_pw(self.acc_entry.get(), uid_entry.get(), name_entry.get(), pw_entry.get(), cp_entry.get()))
 		self.submit.grid(row = 8, columnspan = 2, padx = pad, pady = (pad / 2, pad))
 
 		# auto-fill password entries
@@ -532,6 +545,8 @@ class AddPassword(BaseWindowClass):
 		# check if the credentials are valid
 		valid = validation_helper(credentials)
 		if valid == False:
+			self.parent.focus_force()
+			self.acc_entry.focus()
 			return
 
 		# rename credentials for convenience
@@ -540,6 +555,8 @@ class AddPassword(BaseWindowClass):
 		# confirm and add password
 		response = mb.askyesno('Confirmation', 'Add password?', icon = 'warning')
 		if response == False:
+			self.parent.focus_force()
+			self.acc_entry.focus()
 			return
 		with open('keys.csv', 'a') as password_file:
 			print('{},{},{},{}'.format(acc, uid, name, encryptAES(pw, self.key)), file = password_file)
@@ -1252,4 +1269,6 @@ if __name__ == '__main__':
 	# window to make a selection
 	choose = tk.Tk()
 	choose_object = Choose(choose, login_object.key)
+	# choose.focus_force()
+	# choose.after(1, lambda: choose.focus_force())
 	choose.mainloop()
