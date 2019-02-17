@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import base64
-from collections import OrderedDict 
 import Crypto.Cipher.AES as AES
 import Crypto.Random as RND
 import hashlib as hl
@@ -187,12 +186,14 @@ class BaseWindowClass:
 		parent.bind('<Return>', self.press_enter)
 
 		# cross-platform trick to set application icon
-		if sys.platform == 'linux':
-			parent.tk.call('wm', 'iconphoto', parent._w, tk.PhotoImage(file = 'wpm.png'))
-		else:
+		system = sys.platform
+		if system == 'linux' or system == 'darwin':
+			# parent.tk.call('wm', 'iconphoto', parent._w, tk.PhotoImage(file = 'wpm.gif'))
+			parent.iconphoto(True, tk.PhotoImage(file = 'wpm.gif'))
+		elif system == 'win32':
 			parent.iconbitmap('wpm.ico')
-		
-		# always steal focus when created		
+
+		# always steal focus when created
 		parent.focus_force()
 
 	########################################
@@ -291,7 +292,7 @@ class Login(BaseWindowClass):
 
 		with open('hash') as hash_file:
 			hint = hash_file.readlines()[1].strip()
-			mb.showinfo('Passphrase Hint', hint)
+			mb.showinfo('Passphrase Hint', hint, parent = self.parent)
 			self.parent.focus_force()
 			self.pp_entry.focus()
 
@@ -317,7 +318,7 @@ class Login(BaseWindowClass):
 		with open('hash') as hash_file:
 			expected_hash = hash_file.readline().strip()
 		if pp_hash != expected_hash:
-			mb.showerror('Wrong Passphrase', 'The passphrase entered is wrong.')
+			mb.showerror('Wrong Passphrase', 'The passphrase entered is wrong.', parent = self.parent)
 			self.parent.focus_force()
 			self.pp_entry.focus()
 			return
@@ -519,71 +520,71 @@ class AddPassword(BaseWindowClass):
 		Returns:
 			None
 		'''
-		
+
 		# create a list of the entries which have to be validated
 		entries = [self.acc_entry, self.uid_entry, self.name_entry, self.pw_entry, self.cp_entry]
-		
+
 		# this should check for empty Entries
 		# the first empty Entry should get focus after a specific error message is displayed
 		for entry in entries:
 			if entry.get() == '':
-				mb.showerror('Empty Field', 'One or more fields are empty. Fill all of them to proceed.')
+				mb.showerror('Empty Field', 'One or more fields are empty. Fill all of them to proceed.', parent = self.parent)
 				self.parent.focus_force()
 				entry.focus()
 				return
-		
+
 		# the credentials are stored in CSV format
 		# hence, commas are not allowed in the first three fields
 		for entry in entries[: 3]:
 			if ',' in entry.get():
-				mb.showerror('Invalid Input', 'The \'Account\', \'User ID\' and \'User Name\' fields must not contain commas.')
+				mb.showerror('Invalid Input', 'The \'Account\', \'User ID\' and \'User Name\' fields must not contain commas.', parent = self.parent)
 				self.parent.focus_force()
 				entry.focus()
 				return
-		
+
 		# check whether the two passwords entered are identical
 		if self.pw_entry.get() != self.cp_entry.get():
-			mb.showerror('Password Mismatch', 'The \'Password\' and \'Confirm Password\' fields do not match.')
+			mb.showerror('Password Mismatch', 'The \'Password\' and \'Confirm Password\' fields do not match.', parent = self.parent)
 			self.parent.focus_force()
 			self.cp_entry.focus()
 			return
-		
+
 		# validation is done
 		# the actual process of adding the password is left to the following function
 		# this class will be inherited by 'ChangePassword' class
 		# in the latter class, only that function will have to be changed
 		# so that in 'ChangePassword', the function changes instead of adds password
 		self.add_or_change(entries[: -1]) # no need to send 'Confirm Password'
-		
+
 	########################################
-	
+
 	def add_or_change(self, entries):
 		'''
 		Add the credentials provided to 'keys.csv' file.
-		
+
 		Args:
 			self: class object
 			entries: list of entries which contain credentials to be written to 'keys.csv'
-		
+
 		Returns:
 			None
 		'''
-		
+
 		# confirm
-		response = mb.askyesno('Confirmation', 'Add password?', icon = 'warning')
+		response = mb.askyesno('Confirmation', 'Add password?', icon = 'warning', parent = self.parent)
 		if response == False:
 			self.parent.focus_force()
 			self.acc_entry.focus()
 			return
-		
+
 		# obtain the strings in the entries provided
 		acc, uid, name, pw = [entry.get() for entry in entries]
-		
+
 		# write the credentials to the file 'keys.csv'
 		with open('keys.csv', 'a') as password_file:
 			print('{},{},{},{}'.format(acc, uid, name, encryptAES(pw, self.key)), file = password_file)
 
-		mb.showinfo('Password Added', 'Password for {} was added successfully.'.format(name))
+		mb.showinfo('Password Added', 'Password for {} was added successfully.'.format(name), parent = self.parent)
 
 		self.parent.quit()
 		self.parent.destroy()
@@ -694,27 +695,27 @@ class ChangePassphrase(BaseWindowClass):
 
 		# check passphrase length
 		if len(pp) < phraselength:
-			mb.showerror('Invalid Passphrase', 'The passphrase should be at least {} characters long.'.format(phraselength))
+			mb.showerror('Invalid Passphrase', 'The passphrase should be at least {} characters long.'.format(phraselength), parent = self.parent)
 			self.parent.focus_force()
 			self.pp_entry.focus()
 			return
 
 		# compare passphrases
 		if pp != cp:
-			mb.showerror('Passphrase Mismatch', 'The \'New Passphrase\' and \'Confirm Passphrase\' fields do not match.')
+			mb.showerror('Passphrase Mismatch', 'The \'New Passphrase\' and \'Confirm Passphrase\' fields do not match.', parent = self.parent)
 			self.parent.focus_force()
 			self.cp_entry.focus()
 			return
 
 		# passphrase hint is necessary
 		if hint == '':
-			mb.showerror('Hint Required', 'You must provide a hint for the new passphrase.')
+			mb.showerror('Hint Required', 'You must provide a hint for the new passphrase.', parent = self.parent)
 			self.parent.focus_force()
 			self.hint_entry.focus()
 			return
 
 		# confirm
-		response = mb.askyesno('Confirmation', 'Change Passphrase?', icon = 'warning')
+		response = mb.askyesno('Confirmation', 'Change Passphrase?', icon = 'warning', parent = self.parent)
 		if response == False:
 			self.parent.focus_force()
 			self.pp_entry.focus()
@@ -743,7 +744,7 @@ class ChangePassphrase(BaseWindowClass):
 		os.remove('keys.csv')
 		os.rename('.keys', 'keys.csv')
 
-		mb.showinfo('Passphrase Changed', 'Passphrase was changed successfully.')
+		mb.showinfo('Passphrase Changed', 'Passphrase was changed successfully.', parent = self.parent)
 
 		self.parent.quit()
 		self.parent.destroy()
@@ -851,7 +852,7 @@ class Search(BaseWindowClass):
 
 		# if search was unsuccessful, allow the user to try again
 		if self.search_result == []:
-			mb.showinfo('Nothing Found', 'The search term you entered could not be found.')
+			mb.showinfo('Nothing Found', 'The search term you entered could not be found.', parent = self.parent)
 			self.parent.focus_force()
 			self.search_entry.focus()
 			return
@@ -1031,7 +1032,7 @@ class DeletePassword(BaseWindowClass):
 		'''
 
 		# confirm and delete password
-		response = mb.askyesno('Confirmation', 'Delete password? This process cannot be undone.', icon = 'warning')
+		response = mb.askyesno('Confirmation', 'Delete password? This process cannot be undone.', icon = 'warning', parent = self.parent)
 		if response == False:
 			self.parent.focus_force()
 			return
@@ -1045,7 +1046,7 @@ class DeletePassword(BaseWindowClass):
 		os.remove('keys.csv')
 		os.rename('.keys', 'keys.csv')
 
-		mb.showinfo('Password Deleted', 'Password was deleted successfully.')
+		mb.showinfo('Password Deleted', 'Password was deleted successfully.', parent = self.parent)
 
 		self.parent.quit()
 		self.parent.destroy()
@@ -1103,34 +1104,34 @@ class ChangePassword(AddPassword):
 		# change the text on the 'submit' button, which is 'Add' because of inheritance
 		# it should be 'Change' to reflect what this class is doing
 		self.submit['text'] = 'Change'
-	
+
 	########################################
-	
+
 	def add_or_change(self, entries):
 		'''
 		Inherited from 'AddPassword', where this function adds a new line to 'keys.csv'
 		In this class, it must change the line which matches 'self.row_of_interest'
 		Change it to what is provided in 'entries'.
 		Write the result to a new file. Delete the old file and rename the new one.
-		
+
 		Args:
 			self: class object
 			entries: list of entries which contain new credentials
-		
+
 		Returns:
 			None
 		'''
-		
+
 		# confirm
-		response = mb.askyesno('Confirmation', 'Change password?', icon = 'warning')
+		response = mb.askyesno('Confirmation', 'Change password?', icon = 'warning', parent = self.parent)
 		if response == False:
 			self.parent.focus_force()
 			self.acc_entry.focus()
 			return
-		
+
 		# obtain the strings in the entries provided
 		acc, uid, name, pw = [entry.get() for entry in entries]
-		
+
 		# write the new credentials to a new file
 		with open('keys.csv') as password_file, open('.keys', 'w') as updated_password_file:
 			for row in password_file:
@@ -1144,7 +1145,7 @@ class ChangePassword(AddPassword):
 		os.remove('keys.csv')
 		os.rename('.keys', 'keys.csv')
 
-		mb.showinfo('Password Changed', 'Password for {} was changed successfully.'.format(name))
+		mb.showinfo('Password Changed', 'Password for {} was changed successfully.'.format(name), parent = self.parent)
 
 		self.parent.quit()
 		self.parent.destroy()
@@ -1270,13 +1271,13 @@ def handle_missing_files(hash_exists, keys_exists):
 	# if it did, the first 'if' condition would have been executed
 	# so, terminate the program, because without 'hash', the contents of 'keys.csv' cannot be used
 	if os.stat('keys.csv').st_size:
-		mb.showerror('Missing File', 'The file \'hash\' is missing. It is required to log in to the application. Without it, your password file \'keys.csv\' is unusable.')
+		mb.showerror('Missing File', 'The file \'hash\' is missing. It is required to log in to the application. Without it, your password file \'keys.csv\' is unusable.', parent = root)
 		raise SystemExit(1)
 
 	# at this point, 'keys.csv' exists and is empty
 	# if 'hash' is missing, create it with the default contents
 	if not hash_exists:
-		response = mb.askyesno('First Time User?', 'The file \'hash\' is missing. It is required to log in to the application. It will be created with \'root\' as the default passphrase.', icon = 'warning')
+		response = mb.askyesno('First Time User?', 'The file \'hash\' is missing. It is required to log in to the application. It will be created with \'root\' as the default passphrase.', icon = 'warning', parent = root)
 		if response == False:
 			raise SystemExit(0)
 		with open('hash', 'w') as hash_file:
