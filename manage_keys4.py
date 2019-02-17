@@ -941,14 +941,13 @@ class Found(BaseWindowClass):
 
 	########################################
 
-	def get_password_line(self):
+	def get_password_line(self, event = None):
 		'''
 		Send the row of interest back to 'locate_row_of_interest' function.
 		Do this by setting value of a class member to that string (row).
 
 		Args:
 			self: class object
-			row_index: the value of the radio button the user selected
 
 		Returns:
 			None
