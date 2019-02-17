@@ -826,14 +826,14 @@ class Search(BaseWindowClass):
 		self.search_entry.focus()
 
 		# perform the search
-		self.submit = tk.Button(parent, text = 'Search', height = h, width = w, command = lambda : self.search_password(self.search_entry.get()))
+		self.submit = tk.Button(parent, text = 'Search', height = h, width = w, command = self.search_password)
 		self.submit.grid(row = 4, columnspan = 2, padx = pad, pady = (pad / 2, pad))
 
 	########################################
 
-	def search_password(self, item):
+	def search_password(self):
 		'''
-		Locate all rows of 'keys.csv' file which contain the argument string.
+		Locate all rows of 'keys.csv' file which contain the search string.
 		Each time a match is found, it is appended to 'self.search_result'.
 
 		Args:
@@ -845,6 +845,7 @@ class Search(BaseWindowClass):
 		'''
 
 		# find the string in 'keys.csv'
+		item = self.search_entry.get()
 		with open('keys.csv') as password_file:
 			for row in password_file:
 				if item.lower() in row[: row.rfind(',')].lower():
@@ -873,6 +874,7 @@ class Found(BaseWindowClass):
 	def __init__(self, parent, rows):
 		super().__init__(parent)
 		parent.title('Search Results')
+		parent.bind('<Tab>', self.press_tab)
 		self.rows = rows
 		self.row_of_interest = ''
 
@@ -885,7 +887,7 @@ class Found(BaseWindowClass):
 		inst_label.grid(row = 1, columnspan = 4, padx = pad, pady = (pad / 4, pad))
 
 		# radio button selection variable
-		selection = tk.IntVar(value = 2)
+		self.selection = tk.IntVar(value = 2)
 
 		# create labels in loop
 		for i, row in enumerate(rows, 2):
@@ -894,7 +896,7 @@ class Found(BaseWindowClass):
 			acc, uid, name, pw = row.split(',')
 
 			# radio button
-			choice_rbutton = tk.Radiobutton(parent, variable = selection, value = i)
+			choice_rbutton = tk.Radiobutton(parent, variable = self.selection, value = i)
 			choice_rbutton.grid(row = i, column = 0, padx = (pad, 0))
 
 			# account label
@@ -910,12 +912,36 @@ class Found(BaseWindowClass):
 			name_label.grid(row = i, column = 3, padx = (pad / 4, pad))
 
 		# make selection
-		self.submit = tk.Button(parent, text = 'Select', height = h, width = w, command = lambda : self.get_password_line(selection.get()))
+		self.submit = tk.Button(parent, text = 'Select', height = h, width = w, command = self.get_password_line)
 		self.submit.grid(row = i + 1, columnspan = 4, padx = pad, pady = pad)
 
 	########################################
 
-	def get_password_line(self, row_index):
+	def press_tab(self, event = None):
+		'''
+		Pressing 'Tab' should change the radio button selection.
+		By default, it also cycles widget focus.
+		Suppress this latter behaviour.
+		This will ensure that the radio button in focus is the one selected.
+
+		Args:
+			self: class object
+			event: GUI event
+
+		Returns:
+			None
+		'''
+
+		# current = self.selection.get() - 1
+		# updated = (current + 1) % len(self.rows) + 1
+		# self.selection.set(updated)
+		# # print(self.selection.get())
+		# # self.submit.focus()
+		print(self.parent.focus_get())
+
+	########################################
+
+	def get_password_line(self):
 		'''
 		Send the row of interest back to 'locate_row_of_interest' function.
 		Do this by setting value of a class member to that string (row).
@@ -930,7 +956,7 @@ class Found(BaseWindowClass):
 
 		self.parent.quit()
 		self.parent.destroy()
-		self.row_of_interest = self.rows[row_index - 2]
+		self.row_of_interest = self.rows[self.selection.get() - 2]
 
 ################################################################################
 
