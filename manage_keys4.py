@@ -7,6 +7,7 @@ import hashlib as hl
 import os
 import random as rnd
 import string
+import sys
 import tkinter as tk
 import tkinter.messagebox as mb
 
@@ -215,8 +216,13 @@ class BaseWindowClass:
 		parent.protocol('WM_DELETE_WINDOW', self.close_button)
 		parent.bind('<Escape>', self.close_button)
 		parent.bind('<Return>', self.press_enter)
-		parent.iconbitmap(r'C:\Documents and Settings\34.5\key-manager\wpm.ico')
 		parent.focus_force() # always steal focus when created
+
+		# cross-platform trick to set application icon
+		if sys.platform == 'linux':
+			parent.tk.call('wm', 'iconphoto', parent._w, tk.PhotoImage(file = 'wpm.png'))
+		else:
+			parent.iconbitmap(r'C:\Documents and Settings\34.5\key-manager\wpm.ico')
 
 	########################################
 
