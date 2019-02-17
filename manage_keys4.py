@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import base64
+from collections import OrderedDict 
 import Crypto.Cipher.AES as AES
 import Crypto.Random as RND
 import hashlib as hl
@@ -24,7 +25,7 @@ import tkinter.messagebox as mb
 titlefont = 'Noto 15 bold' # window head label font
 subtitlefont = 'Noto 10 bold' # font used by label associated with an Entry
 passlength = 18 # length of the random password generated
-phraselength = 0 # minimum passphrase length required while changing passphrase
+phraselength = 1 # minimum passphrase length required while changing passphrase
 pad = 30 # the padding used for tkinter widgets
 h, w = 2, 20 # main button sizes
 
@@ -112,38 +113,6 @@ def decryptAES(ciphertext, key):
 
 ################################################################################
 
-def validation_helper(credentials):
-	'''
-	Validate the entries filled by the user while adding or changing password entries.
-	This function is used in the 'AddPassword' and 'ChangePassword' classes.
-
-	Args:
-		credentials: list of 5 strings [account, user ID, user name, password, confirm password]
-
-	Returns:
-		False (if the credentials are not valid)
-		True (if they are valid)
-	'''
-
-	# check if any field is empty
-	if '' in credentials:
-		mb.showerror('Empty Input', 'One or more fields are still empty. Fill all of them to proceed.')
-		return False
-
-	# check if any of the first three credentials contain a comma
-	if ',' in ''.join(credentials[: 3]):
-		mb.showerror('Invalid Input', 'The \'Account\', \'User ID\' and \'User Name\' fields must not contain commas.')
-		return False
-
-	# compare passwords
-	if credentials[3] != credentials[4]:
-		mb.showerror('Password Mismatch', 'The \'Password\' and \'Confirm Password\' fields do not match.')
-		return False
-
-	return True
-
-################################################################################
-
 class CreateTooltip:
 	'''
 	Display a hint when the mouse hovers over a widget.
@@ -177,7 +146,7 @@ class CreateTooltip:
 		# the tip box is a tk.Toplevel with its title bar removed
 		self.tw = tk.Toplevel(self.widget)
 		self.tw.wm_overrideredirect(True)
-		self.tw.wm_geometry('+%d+%d' % (x, y))
+		self.tw.wm_geometry('+{}+{}'.format(x, y))
 		tk.Label(self.tw, text = self.text).pack()
 
 	########################################
@@ -204,9 +173,9 @@ class BaseWindowClass:
 	Base class which will be inherited to display tkinter windows.
 	Important note!
 	The first Entry in any class which inherits 'BaseWindowClass' should have focus.
-	But when a messagebox is displayed, the focus is lost.
+	But when a message box is displayed on Windows, the focus is lost.
 	After the message box is displayed, I must focus the Entry again.
-	To access the Entry, I make it a class member variable.
+	To access the Entry objects, I make some of them class member variables.
 	For instance, pp_entry in 'Login' class.
 	'''
 
@@ -216,13 +185,15 @@ class BaseWindowClass:
 		parent.protocol('WM_DELETE_WINDOW', self.close_button)
 		parent.bind('<Escape>', self.close_button)
 		parent.bind('<Return>', self.press_enter)
-		parent.focus_force() # always steal focus when created
 
 		# cross-platform trick to set application icon
 		if sys.platform == 'linux':
 			parent.tk.call('wm', 'iconphoto', parent._w, tk.PhotoImage(file = 'wpm.png'))
 		else:
-			parent.iconbitmap(r'C:\Documents and Settings\34.5\key-manager\wpm.ico')
+			parent.iconbitmap('wpm.ico')
+		
+		# always steal focus when created		
+		parent.focus_force()
 
 	########################################
 
@@ -295,7 +266,7 @@ class Login(BaseWindowClass):
 		hint_button.grid(row = 3, columnspan = 2, padx = pad, pady = (pad / 2, pad / 4))
 
 		# check if password is correct and proceed
-		self.submit = tk.Button(parent, text = 'Log In', height = h, width = w, command = lambda : self.validate_phrase(self.pp_entry.get()))
+		self.submit = tk.Button(parent, text = 'Log In', height = h, width = w, command = self.validate_phrase)
 		self.submit.grid(row = 4, columnspan = 2, padx = pad, pady = (pad / 4, pad))
 
 	########################################
@@ -326,7 +297,7 @@ class Login(BaseWindowClass):
 
 	########################################
 
-	def validate_phrase(self, pp):
+	def validate_phrase(self):
 		'''
 		Compare the SHA-512 of the entered passphrase with the stored value.
 		If they are the same, set the SHA-256 of the passphrase as the AES256 key.
@@ -341,6 +312,7 @@ class Login(BaseWindowClass):
 		'''
 
 		# compare the string stored in the file 'hash' with the SHA-512 of 'phrase'
+		pp = self.pp_entry.get()
 		pp_hash = hl.sha512(pp.encode()).hexdigest()
 		with open('hash') as hash_file:
 			expected_hash = hash_file.readline().strip()
@@ -476,23 +448,23 @@ class AddPassword(BaseWindowClass):
 		self.acc_entry.focus()
 
 		# user ID prompt entry
-		uid_entry = tk.Entry(parent, textvariable = self.uidvar)
-		uid_entry.grid(row = 3, column = 1, padx = pad, pady = pad / 4)
+		self.uid_entry = tk.Entry(parent, textvariable = self.uidvar)
+		self.uid_entry.grid(row = 3, column = 1, padx = pad, pady = pad / 4)
 
 		# user name prompt entry
-		name_entry = tk.Entry(parent, textvariable = self.namevar)
-		name_entry.grid(row = 4, column = 1, padx = pad, pady = (pad / 4, pad / 2))
+		self.name_entry = tk.Entry(parent, textvariable = self.namevar)
+		self.name_entry.grid(row = 4, column = 1, padx = pad, pady = (pad / 4, pad / 2))
 
 		# password prompt entry
-		pw_entry = tk.Entry(parent, textvariable = self.pwvar, show = '*')
-		pw_entry.grid(row = 6, column = 1, padx = pad, pady = (pad / 2, pad / 4))
+		self.pw_entry = tk.Entry(parent, textvariable = self.pwvar, show = '*')
+		self.pw_entry.grid(row = 6, column = 1, padx = pad, pady = (pad / 2, pad / 4))
 
 		# confirm password prompt entry
-		cp_entry = tk.Entry(parent, textvariable = self.cpvar, show = '*')
-		cp_entry.grid(row = 7, column = 1, padx = pad, pady = (pad / 4, pad / 2))
+		self.cp_entry = tk.Entry(parent, textvariable = self.cpvar, show = '*')
+		self.cp_entry.grid(row = 7, column = 1, padx = pad, pady = (pad / 4, pad / 2))
 
 		# add the password to the file
-		self.submit = tk.Button(parent, text = 'Add', height = h, width = w, command = lambda : self.validate_pw(self.acc_entry.get(), uid_entry.get(), name_entry.get(), pw_entry.get(), cp_entry.get()))
+		self.submit = tk.Button(parent, text = 'Add', height = h, width = w, command = self.validate_pw)
 		self.submit.grid(row = 8, columnspan = 2, padx = pad, pady = (pad / 2, pad))
 
 		# auto-fill password entries
@@ -506,12 +478,12 @@ class AddPassword(BaseWindowClass):
 		CreateTooltip(refresh_button, 'Re-generate suggested password')
 
 		# toggle password view
-		pass_button = tk.Button(parent, text = 'Password', font = subtitlefont, command = lambda : show_pass(pw_entry))
+		pass_button = tk.Button(parent, text = 'Password', font = subtitlefont, command = lambda : show_pass(self.pw_entry))
 		pass_button.grid(row = 6, column = 0, padx = pad, pady = (pad / 2, pad / 4))
 		CreateTooltip(pass_button, 'Show or hide password')
 
 		# toggle confirm password view
-		cpass_button = tk.Button(parent, text = 'Confirm Password', font = subtitlefont, command = lambda : show_pass(cp_entry))
+		cpass_button = tk.Button(parent, text = 'Confirm Password', font = subtitlefont, command = lambda : show_pass(self.cp_entry))
 		cpass_button.grid(row = 7, column = 0, padx = pad, pady = (pad / 4, pad / 2))
 		CreateTooltip(cpass_button, 'Show or hide password')
 
@@ -533,7 +505,7 @@ class AddPassword(BaseWindowClass):
 
 	########################################
 
-	def validate_pw(self, *credentials):
+	def validate_pw(self):
 		'''
 		Check whether the credentials provided by the user are appropriate.
 		The account, user ID, user name and password entries must not be empty.
@@ -547,23 +519,67 @@ class AddPassword(BaseWindowClass):
 		Returns:
 			None
 		'''
-
-		# check if the credentials are valid
-		valid = validation_helper(credentials)
-		if valid == False:
+		
+		# create a list of the entries which have to be validated
+		entries = [self.acc_entry, self.uid_entry, self.name_entry, self.pw_entry, self.cp_entry]
+		
+		# this should check for empty Entries
+		# the first empty Entry should get focus after a specific error message is displayed
+		for entry in entries:
+			if entry.get() == '':
+				mb.showerror('Empty Field', 'One or more fields are empty. Fill all of them to proceed.')
+				self.parent.focus_force()
+				entry.focus()
+				return
+		
+		# the credentials are stored in CSV format
+		# hence, commas are not allowed in the first three fields
+		for entry in entries[: 3]:
+			if ',' in entry.get():
+				mb.showerror('Invalid Input', 'The \'Account\', \'User ID\' and \'User Name\' fields must not contain commas.')
+				self.parent.focus_force()
+				entry.focus()
+				return
+		
+		# check whether the two passwords entered are identical
+		if self.pw_entry.get() != self.cp_entry.get():
+			mb.showerror('Password Mismatch', 'The \'Password\' and \'Confirm Password\' fields do not match.')
 			self.parent.focus_force()
-			self.acc_entry.focus()
+			self.cp_entry.focus()
 			return
-
-		# rename credentials for convenience
-		acc, uid, name, pw, cp = credentials
-
-		# confirm and add password
+		
+		# validation is done
+		# the actual process of adding the password is left to the following function
+		# this class will be inherited by 'ChangePassword' class
+		# in the latter class, only that function will have to be changed
+		# so that in 'ChangePassword', the function changes instead of adds password
+		self.add_or_change(entries[: -1]) # no need to send 'Confirm Password'
+		
+	########################################
+	
+	def add_or_change(self, entries):
+		'''
+		Add the credentials provided to 'keys.csv' file.
+		
+		Args:
+			self: class object
+			entries: list of entries which contain credentials to be written to 'keys.csv'
+		
+		Returns:
+			None
+		'''
+		
+		# confirm
 		response = mb.askyesno('Confirmation', 'Add password?', icon = 'warning')
 		if response == False:
 			self.parent.focus_force()
 			self.acc_entry.focus()
 			return
+		
+		# obtain the strings in the entries provided
+		acc, uid, name, pw = [entry.get() for entry in entries]
+		
+		# write the credentials to the file 'keys.csv'
 		with open('keys.csv', 'a') as password_file:
 			print('{},{},{},{}'.format(acc, uid, name, encryptAES(pw, self.key)), file = password_file)
 
@@ -595,6 +611,7 @@ def change_passphrase(choose_window):
 
 	# unhide the option choosing window
 	choose_window.parent.deiconify()
+	choose_window.parent.focus_force()
 
 ################################################################################
 
@@ -631,29 +648,29 @@ class ChangePassphrase(BaseWindowClass):
 		hint_label.grid(row = 5, column = 0, padx = pad, pady = (pad / 4, pad / 2))
 
 		# passphrase prompt entry
-		pp_entry = tk.Entry(parent, show = '*')
-		pp_entry.grid(row = 3, column = 1, padx = pad, pady = (pad / 2, pad / 4))
-		pp_entry.focus()
+		self.pp_entry = tk.Entry(parent, show = '*')
+		self.pp_entry.grid(row = 3, column = 1, padx = pad, pady = (pad / 2, pad / 4))
+		self.pp_entry.focus()
 
 		# confirm passphrase prompt entry
-		cp_entry = tk.Entry(parent, show = '*')
-		cp_entry.grid(row = 4, column = 1, padx = pad, pady = pad / 4)
+		self.cp_entry = tk.Entry(parent, show = '*')
+		self.cp_entry.grid(row = 4, column = 1, padx = pad, pady = pad / 4)
 
 		# passphrase hint prompt entry
-		hint_entry = tk.Entry(parent)
-		hint_entry.grid(row = 5, column = 1, padx = pad, pady = (pad / 4, pad / 2))
+		self.hint_entry = tk.Entry(parent)
+		self.hint_entry.grid(row = 5, column = 1, padx = pad, pady = (pad / 4, pad / 2))
 
 		# change the passphrase
-		self.submit = tk.Button(parent, text = 'Change', height = h, width = w, command = lambda : self.update_phrase(pp_entry.get(), cp_entry.get(), hint_entry.get()))
+		self.submit = tk.Button(parent, text = 'Change', height = h, width = w, command = lambda : self.update_phrase(self.pp_entry.get(), self.cp_entry.get(), self.hint_entry.get()))
 		self.submit.grid(row = 6, columnspan = 2, padx = pad, pady = (pad / 2, pad))
 
 		# toggle passphrase view
-		pp_button = tk.Button(parent, text = 'New Passphrase', font = subtitlefont, command = lambda : show_pass(pp_entry))
+		pp_button = tk.Button(parent, text = 'New Passphrase', font = subtitlefont, command = lambda : show_pass(self.pp_entry))
 		pp_button.grid(row = 3, column = 0, padx = pad, pady = (pad / 2, pad / 4))
 		CreateTooltip(pp_button, 'Show or hide passphrase')
 
 		# toggle confirm passphrase view
-		cp_button = tk.Button(parent, text = 'Confirm Passphrase', font = subtitlefont, command = lambda : show_pass(cp_entry))
+		cp_button = tk.Button(parent, text = 'Confirm Passphrase', font = subtitlefont, command = lambda : show_pass(self.cp_entry))
 		cp_button.grid(row = 4, column = 0, padx = pad, pady = pad / 4)
 		CreateTooltip(cp_button, 'Show or hide passphrase')
 
@@ -678,21 +695,29 @@ class ChangePassphrase(BaseWindowClass):
 		# check passphrase length
 		if len(pp) < phraselength:
 			mb.showerror('Invalid Passphrase', 'The passphrase should be at least {} characters long.'.format(phraselength))
+			self.parent.focus_force()
+			self.pp_entry.focus()
 			return
 
 		# compare passphrases
 		if pp != cp:
 			mb.showerror('Passphrase Mismatch', 'The \'New Passphrase\' and \'Confirm Passphrase\' fields do not match.')
+			self.parent.focus_force()
+			self.cp_entry.focus()
 			return
 
 		# passphrase hint is necessary
 		if hint == '':
 			mb.showerror('Hint Required', 'You must provide a hint for the new passphrase.')
+			self.parent.focus_force()
+			self.hint_entry.focus()
 			return
 
 		# confirm
 		response = mb.askyesno('Confirmation', 'Change Passphrase?', icon = 'warning')
 		if response == False:
+			self.parent.focus_force()
+			self.pp_entry.focus()
 			return
 
 		# write the SHA-512 of the new passphrase to a new file
@@ -795,12 +820,12 @@ class Search(BaseWindowClass):
 		search_label.grid(row = 3, column = 0, padx = pad, pady = pad / 2)
 
 		# search prompt entry
-		search_entry = tk.Entry(parent)
-		search_entry.grid(row = 3, column = 1, padx = pad, pady = pad / 2)
-		search_entry.focus()
+		self.search_entry = tk.Entry(parent)
+		self.search_entry.grid(row = 3, column = 1, padx = pad, pady = pad / 2)
+		self.search_entry.focus()
 
 		# perform the search
-		self.submit = tk.Button(parent, text = 'Search', height = h, width = w, command = lambda : self.search_password(search_entry.get()))
+		self.submit = tk.Button(parent, text = 'Search', height = h, width = w, command = lambda : self.search_password(self.search_entry.get()))
 		self.submit.grid(row = 4, columnspan = 2, padx = pad, pady = (pad / 2, pad))
 
 	########################################
@@ -826,7 +851,9 @@ class Search(BaseWindowClass):
 
 		# if search was unsuccessful, allow the user to try again
 		if self.search_result == []:
-			mb.showinfo('Nothing Found','The search term you entered could not be found.')
+			mb.showinfo('Nothing Found', 'The search term you entered could not be found.')
+			self.parent.focus_force()
+			self.search_entry.focus()
 			return
 
 		# search was successful--close the window
@@ -1006,6 +1033,7 @@ class DeletePassword(BaseWindowClass):
 		# confirm and delete password
 		response = mb.askyesno('Confirmation', 'Delete password? This process cannot be undone.', icon = 'warning')
 		if response == False:
+			self.parent.focus_force()
 			return
 		with open('keys.csv') as password_file, open('.keys', 'w') as updated_password_file:
 			for row in password_file:
@@ -1075,36 +1103,35 @@ class ChangePassword(AddPassword):
 		# change the text on the 'submit' button, which is 'Add' because of inheritance
 		# it should be 'Change' to reflect what this class is doing
 		self.submit['text'] = 'Change'
-
+	
 	########################################
-
-	def validate_pw(self, *credentials):
+	
+	def add_or_change(self, entries):
 		'''
-		Check whether the credentials provided by the user are appropriate.
-		The account, user ID, user name and password entries must not be empty.
-		Both password entries must have the same string.
-		There must be no comma in the account, user ID and user name entries.
-
+		Inherited from 'AddPassword', where this function adds a new line to 'keys.csv'
+		In this class, it must change the line which matches 'self.row_of_interest'
+		Change it to what is provided in 'entries'.
+		Write the result to a new file. Delete the old file and rename the new one.
+		
 		Args:
 			self: class object
-			credentials: list of credential strings the user entered
-
+			entries: list of entries which contain new credentials
+		
 		Returns:
 			None
 		'''
-
-		# check if the credentials are valid
-		valid = validation_helper(credentials)
-		if valid == False:
-			return
-
-		# rename credentials for convenience
-		acc, uid, name, pw, cp = credentials
-
-		# confirm and add password
+		
+		# confirm
 		response = mb.askyesno('Confirmation', 'Change password?', icon = 'warning')
 		if response == False:
+			self.parent.focus_force()
+			self.acc_entry.focus()
 			return
+		
+		# obtain the strings in the entries provided
+		acc, uid, name, pw = [entry.get() for entry in entries]
+		
+		# write the new credentials to a new file
 		with open('keys.csv') as password_file, open('.keys', 'w') as updated_password_file:
 			for row in password_file:
 				row = row.strip()
