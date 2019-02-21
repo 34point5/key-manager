@@ -800,6 +800,8 @@ class Search(BaseWindowClass):
 		# vs = tk.Scrollbar(parent, orient = 'vertical')
 		# vs.grid(rowspan = 5, column = 3, sticky = 'ns')
 
+		hs = tk.Scrollbar(parent, orient = 'horizontal')
+
 		# header
 		head_label = tk.Label(parent, text = 'Search Accounts', font = titlefont)
 		head_label.grid(row = 0, columnspan = 2, padx = pad, pady = (pad, pad / 4))
