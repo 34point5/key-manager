@@ -755,9 +755,7 @@ def locate_row_of_interest(choose_window):
 	'''
 	Helper function to change, delete or view a password.
 	Locates which line of 'keys.csv' has to be changed, deleted or viewed.
-	Instantiates Search class and Found class.
-	Search class accepts a term to search in 'keys.csv' file.
-	Found class chooses one out of the search results.
+	Instantiates 'Search' class.
 
 	Args:
 		choose_window: the Choose object whose window is required to create a tk.Toplevel
@@ -772,20 +770,9 @@ def locate_row_of_interest(choose_window):
 	locate_object = Search(locate)
 	locate.mainloop()
 
-	# list of all rows matching the search
-	# if the user closed the 'locate' window without searching, this will be an empty list
-	found_rows = locate_object.search_result
-	if found_rows == []:
-		return None
-
-	# instantiate Found class to display search results
-	select_row = tk.Toplevel(choose_window.parent)
-	select_row_object = Found(select_row, found_rows)
-	select_row.mainloop()
-
 	# find what the user chose
-	# if the user closed the 'select_row' window, this will be an empty string
-	chosen_row = select_row_object.row_of_interest
+	# if the user did not choose any, this will be an empty string
+	chosen_row = locate_object.row_of_interest
 	if chosen_row == '':
 		return None
 
@@ -802,14 +789,23 @@ class Search(BaseWindowClass):
 	def __init__(self, parent):
 		super().__init__(parent)
 		parent.title('Delete, Change or View a Password')
-		self.search_result = []
+		# parent.geometry('100,100')
+		self.row_of_interest = ''
+		# self.search_result = []
+		self.searchvar = tk.StringVar() # the string the user enters as the 'Search Term'
+
+		# whenever the user types something new, update the search results
+		self.searchvar.trace_add('write', lambda *dummy : self.refresh_search(self))
+
+		# vs = tk.Scrollbar(parent, orient = 'vertical')
+		# vs.grid(rowspan = 5, column = 3, sticky = 'ns')
 
 		# header
 		head_label = tk.Label(parent, text = 'Search Accounts', font = titlefont)
 		head_label.grid(row = 0, columnspan = 2, padx = pad, pady = (pad, pad / 4))
 
 		# sub-header
-		subhead_label = tk.Label(parent, text = 'You may leave the field blank if\nyou want a list of all accounts.')
+		subhead_label = tk.Label(parent, text = 'Enter a search term to narrow the list down.')
 		subhead_label.grid(row = 1, columnspan = 2, padx = pad, pady = pad / 4)
 
 		# keyboard instruction
@@ -821,141 +817,64 @@ class Search(BaseWindowClass):
 		search_label.grid(row = 3, column = 0, padx = pad, pady = pad / 2)
 
 		# search prompt entry
-		self.search_entry = tk.Entry(parent)
-		self.search_entry.grid(row = 3, column = 1, padx = pad, pady = pad / 2)
-		self.search_entry.focus()
+		search_entry = tk.Entry(parent, textvariable = self.searchvar)
+		search_entry.grid(row = 3, column = 1, padx = pad, pady = pad / 2)
+		search_entry.focus()
 
 		# perform the search
-		self.submit = tk.Button(parent, text = 'Search', height = h, width = w, command = self.search_password)
-		self.submit.grid(row = 4, columnspan = 2, padx = pad, pady = (pad / 2, pad))
+		self.submit = tk.Button(parent, text = 'Search', height = h, width = w)
+		# self.submit.grid(row = 4, columnspan = 2, padx = pad, pady = (pad / 2, pad))
 
 	########################################
 
-	def search_password(self):
+	def refresh_search(self, event = None):
 		'''
 		Locate all rows of 'keys.csv' file which contain the search string.
 		Each time a match is found, it is appended to 'self.search_result'.
+		Display the contents of 'self.search_result' with radio buttons.
 
 		Args:
 			self: class object
-			item: the string to be searched
 
 		Returns:
 			None
 		'''
 
+		# clear the previous search results
+		self.search_result = []
+
 		# find the string in 'keys.csv'
-		item = self.search_entry.get()
+		item = self.searchvar.get()
+		print(item)
 		with open('keys.csv') as password_file:
 			for row in password_file:
 				if item.lower() in row[: row.rfind(',')].lower():
 					self.search_result.append(row.strip())
 
-		# if search was unsuccessful, allow the user to try again
-		if self.search_result == []:
-			mb.showinfo('Nothing Found', 'The search term you entered could not be found.', parent = self.parent)
-			self.parent.focus_force()
-			self.search_entry.focus()
-			return
-
-		# search was successful--close the window
-		self.parent.quit()
-		self.parent.destroy()
-
-################################################################################
-
-class Found(BaseWindowClass):
-	'''
-	Obtain the list of search results provided by above Search class.
-	Display all the search results in a new window using radio buttons.
-	The user must select the one they are interested in.
-	'''
-
-	def __init__(self, parent, rows):
-		super().__init__(parent)
-		parent.title('Search Results')
-		parent.bind('<Tab>', self.press_tab)
-		self.rows = rows
-		self.row_of_interest = ''
-
-		# header
-		head_label = tk.Label(parent, text = 'Select an Account', font = titlefont)
-		head_label.grid(row = 0, columnspan = 4, padx = pad, pady = (pad, pad / 4))
-
-		# keyboard instruction
-		inst_label = tk.Label(parent, text = 'Press \'Esc\' to return to the main menu.')
-		inst_label.grid(row = 1, columnspan = 4, padx = pad, pady = (pad / 4, pad))
-
 		# radio button selection variable
-		self.selection = tk.IntVar(value = 2)
+		self.selection = tk.IntVar(value = 4)
 
-		# create labels in loop
-		for i, row in enumerate(rows, 2):
+		# display all these search results using radio buttons
+		for i, row in enumerate(self.search_result, 4):
 
 			# rename the comma-separated items for convenience
 			acc, uid, name, pw = row.split(',')
 
 			# radio button
-			choice_rbutton = tk.Radiobutton(parent, variable = self.selection, value = i)
+			choice_rbutton = tk.Radiobutton(self.parent, variable = self.selection, value = i)
 			choice_rbutton.grid(row = i, column = 0, padx = (pad, 0))
 
 			# account label
-			acc_label = tk.Label(parent, text = acc)
+			acc_label = tk.Label(self.parent, text = acc)
 			acc_label.grid(row = i, column = 1, padx = (0, pad / 4))
 
 			# user ID label
-			uid_label = tk.Label(parent, text = uid)
+			uid_label = tk.Label(self.parent, text = uid)
 			uid_label.grid(row = i, column = 2, padx = pad / 4)
 
 			# user name label
-			name_label = tk.Label(parent, text = name)
+			name_label = tk.Label(self.parent, text = name)
 			name_label.grid(row = i, column = 3, padx = (pad / 4, pad))
-
-		# make selection
-		self.submit = tk.Button(parent, text = 'Select', height = h, width = w, command = self.get_password_line)
-		self.submit.grid(row = i + 1, columnspan = 4, padx = pad, pady = pad)
-
-	########################################
-
-	def press_tab(self, event = None):
-		'''
-		Pressing 'Tab' should change the radio button selection.
-		By default, it also cycles widget focus.
-		Suppress this latter behaviour.
-		This will ensure that the radio button in focus is the one selected.
-
-		Args:
-			self: class object
-			event: GUI event
-
-		Returns:
-			None
-		'''
-
-		# current = self.selection.get() - 1
-		# updated = (current + 1) % len(self.rows) + 1
-		# self.selection.set(updated)
-		# # print(self.selection.get())
-		# # self.submit.focus()
-		# print(self.parent.focus_get())
-
-	########################################
-
-	def get_password_line(self, event = None):
-		'''
-		Send the row of interest back to 'locate_row_of_interest' function.
-		Do this by setting value of a class member to that string (row).
-
-		Args:
-			self: class object
-
-		Returns:
-			None
-		'''
-
-		self.parent.quit()
-		self.parent.destroy()
-		self.row_of_interest = self.rows[self.selection.get() - 2]
 
 ################################################################################
 
