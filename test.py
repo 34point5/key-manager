@@ -144,8 +144,8 @@ class CreateTooltip:
 
 		# the tip box is a tk.Toplevel with its title bar removed
 		self.tw = tk.Toplevel(self.widget)
-		self.tw.wm_overrideredirect(True)
-		self.tw.wm_geometry('+{}+{}'.format(x, y))
+		self.tw.overrideredirect(True)
+		self.tw.geometry('+{}+{}'.format(x, y))
 		tk.Label(self.tw, text = self.text).pack()
 
 	########################################
@@ -791,14 +791,10 @@ class Search(BaseWindowClass):
 		parent.title('Delete, Change or View a Password')
 		self.row_of_interest = ''
 		self.searchvar = tk.StringVar() # the string the user enters as the 'Search Term'
+		self.selection = tk.IntVar(value = 0) # the radio button selection
 
 		# whenever the user types something new, update the search results
 		self.searchvar.trace_add('write', lambda *dummy : self.refresh_search(self))
-
-		# vs = tk.Scrollbar(parent, orient = 'vertical')
-		# vs.grid(rowspan = 5, column = 3, sticky = 'ns')
-
-		# hs = tk.Scrollbar(parent, orient = 'horizontal')
 
 		# frame to display headings and tk.Entry
 		topframe = tk.Frame(parent)
@@ -806,36 +802,61 @@ class Search(BaseWindowClass):
 
 		# header
 		head_label = tk.Label(topframe, text = 'Search Accounts', font = titlefont)
-		head_label.grid(row = 0, columnspan = 2, padx = pad, pady = pad)
+		head_label.grid(row = 0, columnspan = 2, padx = pad, pady = (pad, pad / 4))
 
-		# frame to display account entries from 'keys.csv'
-		bottomframe = tk.Frame(parent)
-		bottomframe.grid(row = 1)
+		# sub-header
+		subhead_label = tk.Label(topframe, text = 'Enter a search term to narrow the list down.')
+		subhead_label.grid(row = 1, columnspan = 2, padx = pad, pady = pad / 4)
 
-		# # header
-		# head_label = tk.Label(parent, text = 'Search Accounts', font = titlefont)
-		# head_label.grid(row = 0, columnspan = 2, padx = pad, pady = (pad, pad / 4))
+		# keyboard instruction
+		inst_label = tk.Label(topframe, text = 'Press \'Esc\' to return to the main menu.')
+		inst_label.grid(row = 2, columnspan = 2, padx = pad, pady = (pad / 4, pad / 2))
+
+		# search prompt label
+		search_label = tk.Label(topframe, text = 'Search Term', font = subtitlefont)
+		search_label.grid(row = 3, column = 0, padx = pad, pady = (pad / 2, pad))
+
+		# search prompt entry
+		self.search_entry = tk.Entry(topframe, textvariable = self.searchvar)
+		self.search_entry.grid(row = 3, column = 1, padx = pad, pady = (pad / 2, pad))
+		self.search_entry.focus()
+
+		# create canvas
+		self.canvas = tk.Canvas(parent)
+		self.canvas.grid(row = 1, pady = (0, pad))
+
+		# # frame to display account entries from 'keys.csv'
+		# self.bottomframe = tk.Frame(parent)
+		# self.bottomframe.grid(row = 1, pady = (0, pad))
 		#
-		# # sub-header
-		# subhead_label = tk.Label(parent, text = 'Enter a search term to narrow the list down.')
-		# subhead_label.grid(row = 1, columnspan = 2, padx = pad, pady = pad / 4)
+		# # initially, add everything in 'keys.csv' to the frame
+		# # for that, first, load the file contents
+		# with open('keys.csv') as password_file:
+		# 	rows = password_file.readlines()
 		#
-		# # keyboard instruction
-		# inst_label = tk.Label(parent, text = 'Press \'Esc\' to return to the main menu.')
-		# inst_label.grid(row = 2, columnspan = 2, padx = pad, pady = (pad / 4, pad / 2))
+		# # create a radio button for each
+		# for i, row in enumerate(rows):
+		# 	acc, uid, name, pw = row.strip().split(',')
 		#
-		# # search prompt label
-		# search_label = tk.Label(parent, text = 'Search Term', font = subtitlefont)
-		# search_label.grid(row = 3, column = 0, padx = pad, pady = pad / 2)
+		# 	# radio button
+		# 	choice_rbutton = tk.Radiobutton(self.bottomframe, variable = self.selection, value = i)
+		# 	choice_rbutton.grid(row = i, column = 0, padx = (pad, 0))
 		#
-		# # search prompt entry
-		# search_entry = tk.Entry(parent, textvariable = self.searchvar)
-		# search_entry.grid(row = 3, column = 1, padx = pad, pady = pad / 2)
-		# search_entry.focus()
+		# 	# account label
+		# 	acc_label = tk.Label(self.bottomframe, text = acc)
+		# 	acc_label.grid(row = i, column = 1, padx = (0, pad / 4))
 		#
-		# # perform the search
-		# self.submit = tk.Button(parent, text = 'Search', height = h, width = w)
-		# # self.submit.grid(row = 4, columnspan = 2, padx = pad, pady = (pad / 2, pad))
+		# 	# user ID label
+		# 	uid_label = tk.Label(self.bottomframe, text = uid)
+		# 	uid_label.grid(row = i, column = 2, padx = pad / 4)
+		#
+		# 	# user name label
+		# 	name_label = tk.Label(self.bottomframe, text = name)
+		# 	name_label.grid(row = i, column = 3, padx = (pad / 4, pad))
+
+
+
+
 
 	########################################
 
@@ -854,7 +875,6 @@ class Search(BaseWindowClass):
 
 		# clear the previous search results
 		self.search_result = []
-		self.submit.destroy()
 
 		# find the string in 'keys.csv'
 		item = self.searchvar.get()

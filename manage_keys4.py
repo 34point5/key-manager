@@ -186,12 +186,12 @@ class BaseWindowClass:
 		parent.bind('<Return>', self.press_enter)
 
 		# cross-platform trick to set application icon
-		system = sys.platform
-		if system == 'linux' or system == 'darwin':
-			# parent.tk.call('wm', 'iconphoto', parent._w, tk.PhotoImage(file = 'wpm.gif'))
-			parent.iconphoto(True, tk.PhotoImage(file = 'wpm.gif'))
-		elif system == 'win32':
-			parent.iconbitmap('wpm.ico')
+		# system = sys.platform
+		# if system == 'linux' or system == 'darwin':
+		# 	# parent.tk.call('wm', 'iconphoto', parent._w, tk.PhotoImage(file = 'wpm.gif'))
+		# 	parent.iconphoto(True, tk.PhotoImage(file = 'wpm.gif'))
+		# elif system == 'win32':
+		# 	parent.iconbitmap('wpm.ico')
 
 		# always steal focus when created
 		parent.focus_force()
