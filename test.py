@@ -24,7 +24,7 @@ import tkinter.messagebox as mb
 titlefont = 'Noto 15 bold' # window head label font
 subtitlefont = 'Noto 10 bold' # font used by label associated with an Entry
 passlength = 18 # length of the random password generated
-phraselength = 1 # minimum passphrase length required while changing passphrase
+phraselength = 0 # minimum passphrase length required while changing passphrase
 pad = 30 # the padding used for tkinter widgets
 h, w = 2, 20 # main button sizes
 
@@ -189,9 +189,9 @@ class BaseWindowClass:
 		system = sys.platform
 		if system == 'linux' or system == 'darwin':
 			# parent.tk.call('wm', 'iconphoto', parent._w, tk.PhotoImage(file = 'wpm.gif'))
-			parent.iconphoto(True, tk.PhotoImage(file = 'wpm.gif'))
+			parent.iconphoto(True, tk.PhotoImage(file = 'favicon.gif'))
 		elif system == 'win32':
-			parent.iconbitmap('wpm.ico')
+			parent.iconbitmap('favicon.ico')
 
 		# always steal focus when created
 		parent.focus_force()
@@ -789,9 +789,7 @@ class Search(BaseWindowClass):
 	def __init__(self, parent):
 		super().__init__(parent)
 		parent.title('Delete, Change or View a Password')
-		# parent.geometry('100,100')
 		self.row_of_interest = ''
-		# self.search_result = []
 		self.searchvar = tk.StringVar() # the string the user enters as the 'Search Term'
 
 		# whenever the user types something new, update the search results
@@ -800,32 +798,44 @@ class Search(BaseWindowClass):
 		# vs = tk.Scrollbar(parent, orient = 'vertical')
 		# vs.grid(rowspan = 5, column = 3, sticky = 'ns')
 
-		hs = tk.Scrollbar(parent, orient = 'horizontal')
+		# hs = tk.Scrollbar(parent, orient = 'horizontal')
+
+		# frame to display headings and tk.Entry
+		topframe = tk.Frame(parent)
+		topframe.grid(row = 0)
 
 		# header
-		head_label = tk.Label(parent, text = 'Search Accounts', font = titlefont)
-		head_label.grid(row = 0, columnspan = 2, padx = pad, pady = (pad, pad / 4))
+		head_label = tk.Label(topframe, text = 'Search Accounts', font = titlefont)
+		head_label.grid(row = 0, columnspan = 2, padx = pad, pady = pad)
 
-		# sub-header
-		subhead_label = tk.Label(parent, text = 'Enter a search term to narrow the list down.')
-		subhead_label.grid(row = 1, columnspan = 2, padx = pad, pady = pad / 4)
+		# frame to display account entries from 'keys.csv'
+		bottomframe = tk.Frame(parent)
+		bottomframe.grid(row = 1)
 
-		# keyboard instruction
-		inst_label = tk.Label(parent, text = 'Press \'Esc\' to return to the main menu.')
-		inst_label.grid(row = 2, columnspan = 2, padx = pad, pady = (pad / 4, pad / 2))
-
-		# search prompt label
-		search_label = tk.Label(parent, text = 'Search Term', font = subtitlefont)
-		search_label.grid(row = 3, column = 0, padx = pad, pady = pad / 2)
-
-		# search prompt entry
-		search_entry = tk.Entry(parent, textvariable = self.searchvar)
-		search_entry.grid(row = 3, column = 1, padx = pad, pady = pad / 2)
-		search_entry.focus()
-
-		# perform the search
-		self.submit = tk.Button(parent, text = 'Search', height = h, width = w)
-		# self.submit.grid(row = 4, columnspan = 2, padx = pad, pady = (pad / 2, pad))
+		# # header
+		# head_label = tk.Label(parent, text = 'Search Accounts', font = titlefont)
+		# head_label.grid(row = 0, columnspan = 2, padx = pad, pady = (pad, pad / 4))
+		#
+		# # sub-header
+		# subhead_label = tk.Label(parent, text = 'Enter a search term to narrow the list down.')
+		# subhead_label.grid(row = 1, columnspan = 2, padx = pad, pady = pad / 4)
+		#
+		# # keyboard instruction
+		# inst_label = tk.Label(parent, text = 'Press \'Esc\' to return to the main menu.')
+		# inst_label.grid(row = 2, columnspan = 2, padx = pad, pady = (pad / 4, pad / 2))
+		#
+		# # search prompt label
+		# search_label = tk.Label(parent, text = 'Search Term', font = subtitlefont)
+		# search_label.grid(row = 3, column = 0, padx = pad, pady = pad / 2)
+		#
+		# # search prompt entry
+		# search_entry = tk.Entry(parent, textvariable = self.searchvar)
+		# search_entry.grid(row = 3, column = 1, padx = pad, pady = pad / 2)
+		# search_entry.focus()
+		#
+		# # perform the search
+		# self.submit = tk.Button(parent, text = 'Search', height = h, width = w)
+		# # self.submit.grid(row = 4, columnspan = 2, padx = pad, pady = (pad / 2, pad))
 
 	########################################
 
@@ -844,6 +854,7 @@ class Search(BaseWindowClass):
 
 		# clear the previous search results
 		self.search_result = []
+		self.submit.destroy()
 
 		# find the string in 'keys.csv'
 		item = self.searchvar.get()
@@ -1249,6 +1260,4 @@ if __name__ == '__main__':
 	# window to make a selection
 	choose = tk.Tk()
 	choose_object = Choose(choose, login_object.key)
-	# choose.focus_force()
-	# choose.after(1, lambda: choose.focus_force())
 	choose.mainloop()
