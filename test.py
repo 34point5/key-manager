@@ -825,6 +825,19 @@ class Search(BaseWindowClass):
 		self.canvas = tk.Canvas(parent)
 		self.canvas.grid(row = 1, pady = (0, pad))
 
+		self.xs = tk.Scrollbar(parent, orient = 'horizontal', command = self.canvas.xview)
+		self.xs.grid(row = 2, sticky = 's')
+
+		self.canvas.configure(xscrollcommand = self.xs.set)
+
+		# Create frame inside canvas
+		self.frame = tk.Frame(self.canvas)
+		self.canvas.create_window((0, 0), window = self.frame, anchor = 'nw')
+		self.frame.bind('<Configure>', self.set_scrollregion)
+
+	def set_scrollregion(self, event):
+		self.canvas.configure(scrollregion=self.canvas.bbox('all'))
+
 		# # frame to display account entries from 'keys.csv'
 		# self.bottomframe = tk.Frame(parent)
 		# self.bottomframe.grid(row = 1, pady = (0, pad))
