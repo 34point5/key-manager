@@ -790,8 +790,9 @@ class Search(BaseWindowClass):
 		super().__init__(parent)
 		parent.title('Delete, Change or View a Password')
 		self.row_of_interest = ''
-		self.searchvar = tk.StringVar() # the string the user enters as the 'Search Term'
-		self.selection = tk.IntVar(value = 0) # the radio button selection
+		self.searchvar = tk.StringVar() # string the user enters as the 'Search Term'
+		self.selection = tk.IntVar(value = 0) # radio button selection
+		self.widgets_in_frame_canvas = [] # list which contains the widgets to refresh when user updates 'search_entry'
 
 		# whenever the user types something new, update the search results
 		self.searchvar.trace_add('write', lambda *dummy : self.refresh_search(self))
@@ -817,55 +818,52 @@ class Search(BaseWindowClass):
 		search_label.grid(row = 3, column = 0, padx = pad, pady = (pad / 2, pad))
 
 		# search prompt entry
-		self.search_entry = tk.Entry(topframe, textvariable = self.searchvar)
-		self.search_entry.grid(row = 3, column = 1, padx = pad, pady = (pad / 2, pad))
-		self.search_entry.focus()
+		search_entry = tk.Entry(topframe, textvariable = self.searchvar)
+		search_entry.grid(row = 3, column = 1, padx = pad, pady = (pad / 2, pad))
+		search_entry.focus()
 
-		# create canvas
-		self.canvas = tk.Canvas(parent)
-		self.canvas.grid(row = 1, pady = (0, pad))
+		# frame to contain scrollable canvas
+		bottomframe = tk.Frame(parent)
+		bottomframe.grid(row = 1)
 
-		self.xs = tk.Scrollbar(parent, orient = 'horizontal', command = self.canvas.xview)
-		self.xs.grid(row = 2, sticky = 's')
+		# above-mentioned canvas
+		canvas = tk.Canvas(bottomframe)
+		canvas.grid(row = 0, column = 0)
 
-		self.canvas.configure(xscrollcommand = self.xs.set)
+		# vertical and horizontal scrollbars
+		vsb = tk.Scrollbar(bottomframe, orient = 'vertical', command = canvas.yview)
+		vsb.grid(row = 0, column = 1, sticky = 'ns')
+		canvas.configure(yscrollcommand = vsb.set)
+		hsb = tk.Scrollbar(bottomframe, orient = 'horizontal', command = canvas.xview)
+		hsb.grid(row = 1, column = 0, sticky = 'we')
+		canvas.configure(xscrollcommand = hsb.set)
 
-		# Create frame inside canvas
-		self.frame = tk.Frame(self.canvas)
-		self.canvas.create_window((0, 0), window = self.frame, anchor = 'nw')
-		self.frame.bind('<Configure>', self.set_scrollregion)
+		# frame inside canvas to display radio button list
+		frame_canvas = tk.Frame(canvas)
+		canvas.create_window((0, 0), window = frame_canvas, anchor = 'nw')
+		with open('keys.csv') as password_file:
+			for i, row in enumerate(password_file):
+				rb = tk.Radiobutton(frame_canvas, variable = self.selection, value = i)
+				rb.grid(row = i, column = 0)
+				self.widgets_in_frame_canvas.append(rb)
 
-	def set_scrollregion(self, event):
-		self.canvas.configure(scrollregion=self.canvas.bbox('all'))
+				a, b, c, d = row.strip().split(',')
 
-		# # frame to display account entries from 'keys.csv'
-		# self.bottomframe = tk.Frame(parent)
-		# self.bottomframe.grid(row = 1, pady = (0, pad))
-		#
-		# # initially, add everything in 'keys.csv' to the frame
-		# # for that, first, load the file contents
-		# with open('keys.csv') as password_file:
-		# 	rows = password_file.readlines()
-		#
-		# # create a radio button for each
-		# for i, row in enumerate(rows):
-		# 	acc, uid, name, pw = row.strip().split(',')
-		#
-		# 	# radio button
-		# 	choice_rbutton = tk.Radiobutton(self.bottomframe, variable = self.selection, value = i)
-		# 	choice_rbutton.grid(row = i, column = 0, padx = (pad, 0))
-		#
-		# 	# account label
-		# 	acc_label = tk.Label(self.bottomframe, text = acc)
-		# 	acc_label.grid(row = i, column = 1, padx = (0, pad / 4))
-		#
-		# 	# user ID label
-		# 	uid_label = tk.Label(self.bottomframe, text = uid)
-		# 	uid_label.grid(row = i, column = 2, padx = pad / 4)
-		#
-		# 	# user name label
-		# 	name_label = tk.Label(self.bottomframe, text = name)
-		# 	name_label.grid(row = i, column = 3, padx = (pad / 4, pad))
+				l1 = tk.Label(frame_canvas, text = a)
+				l1.grid(row = i, column = 1)
+				self.widgets_in_frame_canvas.append(l1)
+
+				l2 = tk.Label(frame_canvas, text = b)
+				l2.grid(row = i, column = 2)
+				self.widgets_in_frame_canvas.append(l2)
+
+				l3 = tk.Label(frame_canvas, text = c)
+				l3.grid(row = i, column = 3)
+				self.widgets_in_frame_canvas.append(l3)
+
+		frame_canvas.update_idletasks()
+		canvas.config(scrollregion = canvas.bbox('all'))
+
 
 
 
