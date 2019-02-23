@@ -662,7 +662,7 @@ class ChangePassphrase(BaseWindowClass):
 		self.hint_entry.grid(row = 5, column = 1, padx = pad, pady = (pad / 4, pad / 2))
 
 		# change the passphrase
-		self.submit = tk.Button(parent, text = 'Change', height = h, width = w, command = lambda : self.update_phrase(self.pp_entry.get(), self.cp_entry.get(), self.hint_entry.get()))
+		self.submit = tk.Button(parent, text = 'Change', height = h, width = w, command = self.update_phrase)
 		self.submit.grid(row = 6, columnspan = 2, padx = pad, pady = (pad / 2, pad))
 
 		# toggle passphrase view
@@ -677,7 +677,7 @@ class ChangePassphrase(BaseWindowClass):
 
 	########################################
 
-	def update_phrase(self, pp, cp, hint):
+	def update_phrase(self):
 		'''
 		Change the passphrase used for logins.
 		Calculate the SHA-512 of the new passphrase. Overwrite it onto 'hash'.
@@ -692,6 +692,11 @@ class ChangePassphrase(BaseWindowClass):
 		Returns:
 			None
 		'''
+
+		# obtain the strings entered
+		pp = self.pp_entry.get()
+		cp = self.cp_entry.get()
+		hint = self.hint_entry.get()
 
 		# check passphrase length
 		if len(pp) < phraselength:
@@ -776,7 +781,6 @@ def locate_row_of_interest(choose_window):
 	if chosen_row == '':
 		return None
 
-	print(chosen_row)
 	return chosen_row
 
 ################################################################################
@@ -791,21 +795,21 @@ class Search(BaseWindowClass):
 		super().__init__(parent)
 		parent.title('Delete, Change or View a Password')
 		self.rows = '' # list of rows matching the search
+		self.row_of_interest = '' # the row corresponding to the radio button selected
 		self.searchvar = tk.StringVar() # string the user enters as the 'Search Term'
 		self.selection = tk.IntVar(value = 0) # radio button selection
 		self.widgets_in_frame_canvas = [] # list which contains the widgets to refresh when user updates 'search_entry'
-		self.row_of_interest = '' # the row corresponding to the radio button selected
 
 		# whenever the user types something new, update the search results
 		self.searchvar.trace_add('write', lambda *dummy : self.populate_frame_canvas(self))
 
 		# frame to display headings and tk.Entry
 		topframe = tk.Frame(parent)
-		topframe.grid(row = 0)
+		topframe.grid(row = 0, pady = (pad, pad / 2))
 
 		# header
 		head_label = tk.Label(topframe, text = 'Search Accounts', font = titlefont)
-		head_label.grid(row = 0, columnspan = 2, padx = pad, pady = (pad, pad / 4))
+		head_label.grid(row = 0, columnspan = 2, padx = pad, pady = (0, pad / 4))
 
 		# sub-header
 		subhead_label = tk.Label(topframe, text = 'Enter a search term to narrow the list down.')
@@ -817,16 +821,16 @@ class Search(BaseWindowClass):
 
 		# search prompt label
 		search_label = tk.Label(topframe, text = 'Search Term', font = subtitlefont)
-		search_label.grid(row = 3, column = 0, padx = pad, pady = (pad / 2, pad))
+		search_label.grid(row = 3, column = 0, padx = pad, pady = (pad / 2, 0))
 
 		# search prompt entry
-		search_entry = tk.Entry(topframe, textvariable = self.searchvar)
-		search_entry.grid(row = 3, column = 1, padx = pad, pady = (pad / 2, pad))
-		search_entry.focus()
+		self.search_entry = tk.Entry(topframe, textvariable = self.searchvar)
+		self.search_entry.grid(row = 3, column = 1, padx = pad, pady = (pad / 2, 0))
+		self.search_entry.focus()
 
 		# frame to contain scrollable canvas
 		middleframe = tk.Frame(parent)
-		middleframe.grid(row = 1)
+		middleframe.grid(row = 1, padx = pad, pady = pad / 2)
 
 		# above-mentioned canvas
 		canvas = tk.Canvas(middleframe)
@@ -891,15 +895,15 @@ class Search(BaseWindowClass):
 
 					# account label
 					acc_label = tk.Label(self.frame_canvas, text = acc)
-					acc_label.grid(row = i, column = 1)
+					acc_label.grid(row = i, column = 1, padx = (0, pad / 8))
 
 					# user ID label
 					uid_label = tk.Label(self.frame_canvas, text = uid)
-					uid_label.grid(row = i, column = 2)
+					uid_label.grid(row = i, column = 2, padx = pad / 8)
 
 					# user name label
 					name_label = tk.Label(self.frame_canvas, text = name)
-					name_label.grid(row = i, column = 3)
+					name_label.grid(row = i, column = 3, padx = (pad / 8, 0))
 
 					# save all of them in a list
 					# so that they can be deleted when the user changes the search term
@@ -924,19 +928,30 @@ class Search(BaseWindowClass):
 	########################################
 
 	def set_row(self):
+		'''
+		Set the member variable to the item which has its radio button selected.
 
+		Args:
+			self: class object
+
+		Returns:
+			None
+		'''
+
+		# if the search was successful, set a member variable to the chosen item
 		try:
-			self.row_of_interest = self.rows[self.selection.get()]
+			self.row_of_interest = self.rows[self.selection.get()].strip()
+
+			self.parent.quit()
+			self.parent.destroy()
+
+		# if the search was unsuccessful, 'self.rows' will be an empty list
+		# becuse nothing gets appended to it in above 'populate_frame_canvas' function
+		# hence, IndexError will occur
 		except IndexError:
-			pass
-
-		self.parent.quit()
-		self.parent.destroy()
-
-		# i = self.selection.get()
-		# print(i)
-		# print(self.rows[i])
-
+			mb.showerror('Nothing Found', 'The item you are searching for could not be found in your password file.')
+			self.parent.focus_force()
+			self.search_entry.focus()
 
 ################################################################################
 
