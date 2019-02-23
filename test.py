@@ -776,6 +776,7 @@ def locate_row_of_interest(choose_window):
 	if chosen_row == '':
 		return None
 
+	print(chosen_row)
 	return chosen_row
 
 ################################################################################
@@ -789,13 +790,14 @@ class Search(BaseWindowClass):
 	def __init__(self, parent):
 		super().__init__(parent)
 		parent.title('Delete, Change or View a Password')
-		self.row_of_interest = ''
+		self.rows = '' # list of rows matching the search
 		self.searchvar = tk.StringVar() # string the user enters as the 'Search Term'
 		self.selection = tk.IntVar(value = 0) # radio button selection
 		self.widgets_in_frame_canvas = [] # list which contains the widgets to refresh when user updates 'search_entry'
+		self.row_of_interest = '' # the row corresponding to the radio button selected
 
 		# whenever the user types something new, update the search results
-		self.searchvar.trace_add('write', lambda *dummy : self.refresh_search(self))
+		self.searchvar.trace_add('write', lambda *dummy : self.populate_frame_canvas(self))
 
 		# frame to display headings and tk.Entry
 		topframe = tk.Frame(parent)
@@ -823,59 +825,38 @@ class Search(BaseWindowClass):
 		search_entry.focus()
 
 		# frame to contain scrollable canvas
-		bottomframe = tk.Frame(parent)
-		bottomframe.grid(row = 1)
+		middleframe = tk.Frame(parent)
+		middleframe.grid(row = 1)
 
 		# above-mentioned canvas
-		canvas = tk.Canvas(bottomframe)
+		canvas = tk.Canvas(middleframe)
 		canvas.grid(row = 0, column = 0)
 
 		# vertical and horizontal scrollbars
-		vsb = tk.Scrollbar(bottomframe, orient = 'vertical', command = canvas.yview)
+		vsb = tk.Scrollbar(middleframe, orient = 'vertical', command = canvas.yview)
 		vsb.grid(row = 0, column = 1, sticky = 'ns')
 		canvas.configure(yscrollcommand = vsb.set)
-		hsb = tk.Scrollbar(bottomframe, orient = 'horizontal', command = canvas.xview)
+		hsb = tk.Scrollbar(middleframe, orient = 'horizontal', command = canvas.xview)
 		hsb.grid(row = 1, column = 0, sticky = 'we')
 		canvas.configure(xscrollcommand = hsb.set)
 
 		# frame inside canvas to display radio button list
-		frame_canvas = tk.Frame(canvas)
-		canvas.create_window((0, 0), window = frame_canvas, anchor = 'nw')
-		with open('keys.csv') as password_file:
-			for i, row in enumerate(password_file):
-				rb = tk.Radiobutton(frame_canvas, variable = self.selection, value = i)
-				rb.grid(row = i, column = 0)
-				self.widgets_in_frame_canvas.append(rb)
-
-				a, b, c, d = row.strip().split(',')
-
-				l1 = tk.Label(frame_canvas, text = a)
-				l1.grid(row = i, column = 1)
-				self.widgets_in_frame_canvas.append(l1)
-
-				l2 = tk.Label(frame_canvas, text = b)
-				l2.grid(row = i, column = 2)
-				self.widgets_in_frame_canvas.append(l2)
-
-				l3 = tk.Label(frame_canvas, text = c)
-				l3.grid(row = i, column = 3)
-				self.widgets_in_frame_canvas.append(l3)
-
-		frame_canvas.update_idletasks()
+		self.frame_canvas = tk.Frame(canvas)
+		canvas.create_window((0, 0), window = self.frame_canvas, anchor = 'nw')
+		self.populate_frame_canvas()
 		canvas.config(scrollregion = canvas.bbox('all'))
 
-
-
-
-
+		# choose the radio button selected
+		self.submit = tk.Button(parent, text = 'Select', height = h, width = w, command = self.set_row)
+		self.submit.grid(row = 2, padx = pad, pady = (pad / 2, pad))
 
 	########################################
 
-	def refresh_search(self, event = None):
+	def populate_frame_canvas(self, event = None):
 		'''
-		Locate all rows of 'keys.csv' file which contain the search string.
-		Each time a match is found, it is appended to 'self.search_result'.
-		Display the contents of 'self.search_result' with radio buttons.
+		Scan the string the user typed in the 'search_entry'.
+		If this is empty, populate the frame with everything in 'keys.csv'.
+		Otherwise, populate it with whatever matches the string.
 
 		Args:
 			self: class object
@@ -884,41 +865,78 @@ class Search(BaseWindowClass):
 			None
 		'''
 
-		# clear the previous search results
-		self.search_result = []
+		# delete the widgets already present in the frame
+		for widget in self.widgets_in_frame_canvas:
+			widget.destroy()
 
-		# find the string in 'keys.csv'
-		item = self.searchvar.get()
-		print(item)
+		# clear the previous search results
+		self.rows = []
+
+		# counter to count the rows which get appended to 'self.rows'
+		i = 0
+
+		# look for rows in 'keys.csv' which match the search
 		with open('keys.csv') as password_file:
 			for row in password_file:
-				if item.lower() in row[: row.rfind(',')].lower():
-					self.search_result.append(row.strip())
 
-		# radio button selection variable
-		self.selection = tk.IntVar(value = 4)
+				# display 'row' only if it contains the search term
+				if self.searchvar.get().lower() in row[: row.rfind(',')].lower():
 
-		# display all these search results using radio buttons
-		for i, row in enumerate(self.search_result, 4):
+					# radio button
+					rb = tk.Radiobutton(self.frame_canvas, variable = self.selection, value = i)
+					rb.grid(row = i, column = 0)
 
-			# rename the comma-separated items for convenience
-			acc, uid, name, pw = row.split(',')
+					# break the string 'row'
+					acc, uid, name, pw = row.strip().split(',')
 
-			# radio button
-			choice_rbutton = tk.Radiobutton(self.parent, variable = self.selection, value = i)
-			choice_rbutton.grid(row = i, column = 0, padx = (pad, 0))
+					# account label
+					acc_label = tk.Label(self.frame_canvas, text = acc)
+					acc_label.grid(row = i, column = 1)
 
-			# account label
-			acc_label = tk.Label(self.parent, text = acc)
-			acc_label.grid(row = i, column = 1, padx = (0, pad / 4))
+					# user ID label
+					uid_label = tk.Label(self.frame_canvas, text = uid)
+					uid_label.grid(row = i, column = 2)
 
-			# user ID label
-			uid_label = tk.Label(self.parent, text = uid)
-			uid_label.grid(row = i, column = 2, padx = pad / 4)
+					# user name label
+					name_label = tk.Label(self.frame_canvas, text = name)
+					name_label.grid(row = i, column = 3)
 
-			# user name label
-			name_label = tk.Label(self.parent, text = name)
-			name_label.grid(row = i, column = 3, padx = (pad / 4, pad))
+					# save all of them in a list
+					# so that they can be deleted when the user changes the search term
+					self.widgets_in_frame_canvas.append(rb)
+					self.widgets_in_frame_canvas.append(acc_label)
+					self.widgets_in_frame_canvas.append(uid_label)
+					self.widgets_in_frame_canvas.append(name_label)
+
+					# also save 'row' because it has to be forwarded
+					# it is required to delete, change or view passwords
+					self.rows.append(row)
+
+					# increment counter only if a row was appended
+					i += 1
+
+		# initially, always keep the first radio button selected
+		self.selection.set(0)
+
+		# calculate widget sizes
+		self.frame_canvas.update_idletasks()
+
+	########################################
+
+	def set_row(self):
+
+		try:
+			self.row_of_interest = self.rows[self.selection.get()]
+		except IndexError:
+			pass
+
+		self.parent.quit()
+		self.parent.destroy()
+
+		# i = self.selection.get()
+		# print(i)
+		# print(self.rows[i])
+
 
 ################################################################################
 
