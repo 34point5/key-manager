@@ -24,7 +24,7 @@ import tkinter.messagebox as mb
 titlefont = 'Noto 15 bold' # window head label font
 subtitlefont = 'Noto 10 bold' # font used by label associated with an Entry
 passlength = 18 # length of the random password generated
-phraselength = 0 # minimum passphrase length required while changing passphrase
+phraselength = 1 # minimum passphrase length required while changing passphrase
 pad = 30 # the padding used for tkinter widgets
 h, w = 2, 20 # main button sizes
 
@@ -112,6 +112,36 @@ def decryptAES(ciphertext, key):
 
 ################################################################################
 
+def restore_focus_to(window, widget = None):
+	'''
+	Make a window the active window. Additionally, focus on a widget of that window.
+	On Windows OS, whenever a message box is closed, its tk.Toplevel or tk.Tk does not become active automatically.
+	This function will make 'window' the active window and restore focus to 'widget'.
+	Solving this problem is not as straightforward as simply calling 'focus_force' on the window.
+	If the user closes the window when its message box was open, the window cannot be made the active window.
+	Because it has been closed! In which case, this function should do nothing.
+
+	Args:
+		window: the window which has to be brought into focus
+		widget: the widget within 'window' which will be focused (if provided)
+
+	Returns:
+		None
+	'''
+
+	# make the window active
+	try:
+		window.focus_force()
+	except tk.TclError:
+		print('Window was closed forcibly.')
+		return
+
+	# focus on the widget
+	if widget:
+		widget.focus()
+
+################################################################################
+
 class CreateTooltip:
 	'''
 	Display a hint when the mouse hovers over a widget.
@@ -170,12 +200,6 @@ class CreateTooltip:
 class BaseWindowClass:
 	'''
 	Base class which will be inherited to display tkinter windows.
-	Important note!
-	The first Entry in any class which inherits 'BaseWindowClass' should have focus.
-	But when a message box is displayed on Windows, the focus is lost.
-	After the message box is displayed, I must focus the Entry again.
-	To access the Entry objects, I make some of them class member variables.
-	For instance, pp_entry in 'Login' class.
 	'''
 
 	def __init__(self, parent):
@@ -210,8 +234,6 @@ class BaseWindowClass:
 		If the widget in focus is a button, invoke its action.
 		Else, invoke the action of the 'submit' button.
 		If the class does not have a 'submit' attribute, do nothing.
-		(The 'Choose' class does not have a 'submit' button.
-		Hence, pressing 'Return' will do nothing if no button is focused.)
 
 		Args:
 			self: class object
@@ -228,7 +250,7 @@ class BaseWindowClass:
 			try:
 				self.submit.invoke()
 			except AttributeError:
-				print('No button selected.')
+				print('No button has been selected.')
 
 ################################################################################
 
@@ -293,8 +315,7 @@ class Login(BaseWindowClass):
 		with open('hash') as hash_file:
 			hint = hash_file.readlines()[1].strip()
 			mb.showinfo('Passphrase Hint', hint, parent = self.parent)
-			self.parent.focus_force()
-			self.pp_entry.focus()
+			restore_focus_to(self.parent, self.pp_entry)
 
 	########################################
 
@@ -319,12 +340,11 @@ class Login(BaseWindowClass):
 			expected_hash = hash_file.readline().strip()
 		if pp_hash != expected_hash:
 			mb.showerror('Wrong Passphrase', 'The passphrase entered is wrong.', parent = self.parent)
-			self.parent.focus_force()
-			self.pp_entry.focus()
+			restore_focus_to(self.parent, self.pp_entry)
 			return
 
 		# if the passphrase was correct, close this window and set 'self.key'
-		# which will be used as the encryption / decryption key for AES
+		# which will be used as the key for AES
 		self.parent.quit()
 		self.parent.destroy()
 		self.key = hl.sha256(pp.encode()).digest()
@@ -529,8 +549,7 @@ class AddPassword(BaseWindowClass):
 		for entry in entries:
 			if entry.get() == '':
 				mb.showerror('Empty Field', 'One or more fields are empty. Fill all of them to proceed.', parent = self.parent)
-				self.parent.focus_force()
-				entry.focus()
+				restore_focus_to(self.parent, entry)
 				return
 
 		# the credentials are stored in CSV format
@@ -538,15 +557,13 @@ class AddPassword(BaseWindowClass):
 		for entry in entries[: 3]:
 			if ',' in entry.get():
 				mb.showerror('Invalid Input', 'The \'Account\', \'User ID\' and \'User Name\' fields must not contain commas.', parent = self.parent)
-				self.parent.focus_force()
-				entry.focus()
+				restore_focus_to(self.parent, entry)
 				return
 
 		# check whether the two passwords entered are identical
 		if self.pw_entry.get() != self.cp_entry.get():
 			mb.showerror('Password Mismatch', 'The \'Password\' and \'Confirm Password\' fields do not match.', parent = self.parent)
-			self.parent.focus_force()
-			self.cp_entry.focus()
+			restore_focus_to(self.parent, self.pw_entry)
 			return
 
 		# validation is done
@@ -571,10 +588,10 @@ class AddPassword(BaseWindowClass):
 		'''
 
 		# confirm
+		previously_focused_widget = self.parent.focus_get() # to get back focus after message box is closed
 		response = mb.askyesno('Confirmation', 'Add password?', icon = 'warning', parent = self.parent)
 		if response == False:
-			self.parent.focus_force()
-			self.acc_entry.focus()
+			restore_focus_to(self.parent, previously_focused_widget)
 			return
 
 		# obtain the strings in the entries provided
@@ -701,29 +718,26 @@ class ChangePassphrase(BaseWindowClass):
 		# check passphrase length
 		if len(pp) < phraselength:
 			mb.showerror('Invalid Passphrase', 'The passphrase should be at least {} characters long.'.format(phraselength), parent = self.parent)
-			self.parent.focus_force()
-			self.pp_entry.focus()
+			restore_focus_to(self.parent, self.pp_entry)
 			return
 
 		# compare passphrases
 		if pp != cp:
 			mb.showerror('Passphrase Mismatch', 'The \'New Passphrase\' and \'Confirm Passphrase\' fields do not match.', parent = self.parent)
-			self.parent.focus_force()
-			self.cp_entry.focus()
+			restore_focus_to(self.parent, self.pp_entry)
 			return
 
 		# passphrase hint is necessary
 		if hint == '':
 			mb.showerror('Hint Required', 'You must provide a hint for the new passphrase.', parent = self.parent)
-			self.parent.focus_force()
-			self.hint_entry.focus()
+			restore_focus_to(self.parent, self.hint_entry)
 			return
 
 		# confirm
+		previously_focused_widget = self.parent.focus_get() # to get back focus after message box is closed
 		response = mb.askyesno('Confirmation', 'Change Passphrase?', icon = 'warning', parent = self.parent)
 		if response == False:
-			self.parent.focus_force()
-			self.pp_entry.focus()
+			restore_focus_to(self.parent, previously_focused_widget)
 			return
 
 		# write the SHA-512 of the new passphrase to a new file
@@ -939,6 +953,7 @@ class Search(BaseWindowClass):
 		'''
 
 		# if the search was successful, set a member variable to the chosen item
+		# then exit from here
 		try:
 			self.row_of_interest = self.rows[self.selection.get()].strip()
 
@@ -950,8 +965,7 @@ class Search(BaseWindowClass):
 		# hence, IndexError will occur
 		except IndexError:
 			mb.showerror('Nothing Found', 'The item you are searching for could not be found in your password file.')
-			self.parent.focus_force()
-			self.search_entry.focus()
+			restore_focus_to(self.parent, self.search_entry)
 
 ################################################################################
 
@@ -1055,7 +1069,7 @@ class DeletePassword(BaseWindowClass):
 		# confirm and delete password
 		response = mb.askyesno('Confirmation', 'Delete password? This process cannot be undone.', icon = 'warning', parent = self.parent)
 		if response == False:
-			self.parent.focus_force()
+			restore_focus_to(self.parent)
 			return
 		with open('keys.csv') as password_file, open('.keys', 'w') as updated_password_file:
 			for row in password_file:
@@ -1144,10 +1158,10 @@ class ChangePassword(AddPassword):
 		'''
 
 		# confirm
+		previously_focused_widget = self.parent.focus_get() # to get back focus after message box is closed
 		response = mb.askyesno('Confirmation', 'Change password?', icon = 'warning', parent = self.parent)
 		if response == False:
-			self.parent.focus_force()
-			self.acc_entry.focus()
+			restore_focus_to(self.parent, previously_focused_widget)
 			return
 
 		# obtain the strings in the entries provided
