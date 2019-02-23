@@ -437,6 +437,9 @@ class AddPassword(BaseWindowClass):
 		parent.title('Add a Password')
 		self.key = key
 		self.plvar = tk.StringVar(value = genpass(passlength)) # for 'refresh_button'
+		self.accvar = tk.StringVar() # for 'self.acc_entry'
+		self.uidvar = tk.StringVar() # for 'self.uid_entry'
+		self.namevar = tk.StringVar() # for 'self.name_entry'
 		self.pwvar = tk.StringVar() # for 'self.pw_entry'
 		self.cpvar = tk.StringVar() # for 'self.cp_entry'
 
@@ -461,16 +464,16 @@ class AddPassword(BaseWindowClass):
 		name_label.grid(row = 4, column = 0, padx = pad, pady = (pad / 4, pad / 2))
 
 		# account prompt entry
-		self.acc_entry = tk.Entry(parent)
+		self.acc_entry = tk.Entry(parent, textvariable = self.accvar)
 		self.acc_entry.grid(row = 2, column = 1, padx = pad, pady = (pad / 2, pad / 4))
 		self.acc_entry.focus()
 
 		# user ID prompt entry
-		self.uid_entry = tk.Entry(parent)
+		self.uid_entry = tk.Entry(parent, textvariable = self.uidvar)
 		self.uid_entry.grid(row = 3, column = 1, padx = pad, pady = pad / 4)
 
 		# user name prompt entry
-		self.name_entry = tk.Entry(parent)
+		self.name_entry = tk.Entry(parent, textvariable = self.namevar)
 		self.name_entry.grid(row = 4, column = 1, padx = pad, pady = (pad / 4, pad / 2))
 
 		# password prompt entry
