@@ -854,7 +854,10 @@ class Search(BaseWindowClass):
 		# above-mentioned canvas
 		canvas = tk.Canvas(middleframe)
 		canvas.grid(row = 0, column = 0)
-		canvas.bind_all('<MouseWheel>', lambda : canvas.yview_scroll(-1*(event.delta/120), 'units'))
+		# canvas.bind_all("<Button-4>", self._on_mousewheel)
+		canvas.bind_all('<Button-4>', lambda *dummy : canvas.yview_scroll(-1 * event.delta / 120, 'units'))
+		# https://stackoverflow.com/questions/17355902/python-tkinter-binding-mousewheel-to-scrollbar
+		# bind mouse wheel to scroll
 
 		# scrollbars
 		vsb = tk.Scrollbar(middleframe, orient = 'vertical', command = canvas.yview)
@@ -873,6 +876,11 @@ class Search(BaseWindowClass):
 		# choose the radio button selected
 		self.submit = tk.Button(parent, text = 'Select', height = h, width = w, command = self.set_row)
 		self.submit.grid(row = 2, padx = pad, pady = (pad / 2, pad))
+
+	########################################
+
+	def _on_mousewheel(self, event):
+		self.canvas.yview_scroll(int(-1*(event.delta)), "units")
 
 	########################################
 
