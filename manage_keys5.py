@@ -854,6 +854,7 @@ class Search(BaseWindowClass):
 		# above-mentioned canvas
 		canvas = tk.Canvas(middleframe)
 		canvas.grid(row = 0, column = 0)
+		canvas.bind_all('<MouseWheel>', lambda : canvas.yview_scroll(-1*(event.delta/120), 'units'))
 
 		# scrollbars
 		vsb = tk.Scrollbar(middleframe, orient = 'vertical', command = canvas.yview)
