@@ -421,7 +421,7 @@ def add_password(choose_window):
 
 	# unhide the option choosing window
 	choose_window.parent.deiconify()
-	choose_window.parent.focus_force()
+	# choose_window.parent.focus_force()
 
 ################################################################################
 
@@ -629,7 +629,7 @@ def change_passphrase(choose_window):
 
 	# unhide the option choosing window
 	choose_window.parent.deiconify()
-	choose_window.parent.focus_force()
+	# choose_window.parent.focus_force()
 
 ################################################################################
 
@@ -852,26 +852,28 @@ class Search(BaseWindowClass):
 		middleframe.grid(row = 1, padx = pad, pady = pad / 2)
 
 		# above-mentioned canvas
-		canvas = tk.Canvas(middleframe)
-		canvas.grid(row = 0, column = 0)
-		# canvas.bind_all("<Button-4>", self._on_mousewheel)
-		canvas.bind_all('<Button-4>', lambda *dummy : canvas.yview_scroll(-1 * event.delta / 120, 'units'))
-		# https://stackoverflow.com/questions/17355902/python-tkinter-binding-mousewheel-to-scrollbar
+		self.canvas = tk.Canvas(middleframe)
+		self.canvas.grid(row = 0, column = 0)
+
 		# bind mouse wheel to scroll
+		# https://stackoverflow.com/questions/17355902
+		self.canvas.bind_all('<MouseWheel>', self._on_mousewheel) # for macOS and Windows
+		self.canvas.bind_all('<Button-4>', self._on_mousewheel) # for GNU Linux
+		self.canvas.bind_all('<Button-5>', self._on_mousewheel) # for GNU Linux
 
 		# scrollbars
-		vsb = tk.Scrollbar(middleframe, orient = 'vertical', command = canvas.yview)
+		vsb = tk.Scrollbar(middleframe, orient = 'vertical', command = self.canvas.yview)
 		vsb.grid(row = 0, column = 1, sticky = 'ns')
-		canvas.configure(yscrollcommand = vsb.set)
-		hsb = tk.Scrollbar(middleframe, orient = 'horizontal', command = canvas.xview)
+		self.canvas.configure(yscrollcommand = vsb.set)
+		hsb = tk.Scrollbar(middleframe, orient = 'horizontal', command = self.canvas.xview)
 		hsb.grid(row = 1, column = 0, sticky = 'we')
-		canvas.configure(xscrollcommand = hsb.set)
+		self.canvas.configure(xscrollcommand = hsb.set)
 
 		# frame inside canvas to display radio button list
-		self.frame_canvas = tk.Frame(canvas)
-		canvas.create_window((0, 0), window = self.frame_canvas, anchor = 'nw')
+		self.frame_canvas = tk.Frame(self.canvas)
+		self.canvas.create_window((0, 0), window = self.frame_canvas, anchor = 'nw')
 		self.populate_frame_canvas()
-		canvas.config(scrollregion = canvas.bbox('all'))
+		self.canvas.config(scrollregion = self.canvas.bbox('all'))
 
 		# choose the radio button selected
 		self.submit = tk.Button(parent, text = 'Select', height = h, width = w, command = self.set_row)
@@ -880,7 +882,41 @@ class Search(BaseWindowClass):
 	########################################
 
 	def _on_mousewheel(self, event):
-		self.canvas.yview_scroll(int(-1*(event.delta)), "units")
+		'''
+		Scroll up or down, depending on whether 'event' indicates 'up' or 'down' motion of the mousewheel.
+		It is complicated to make this cross-platform.
+		On GNU Linux, the direction ('up' or 'down') is indicated by 'event.num'.
+		On Windows and macOS, the direction is indicated by the sign (positive or negative) of 'event.delta'.
+
+		Args:
+			self: class object
+			event: GUI event
+
+		Returns:
+			None
+		'''
+
+		# find out the operating system
+		system = sys.platform
+
+		# GNU Linux associates <Button-5> to a mousewheel down event
+		# and <Button-4> to a mousewheel up event
+		if system == 'linux':
+			if event.num == 4:
+				self.canvas.yview_scroll(-1, 'units')
+			elif event.num == 5:
+				self.canvas.yview_scroll(1, 'units')
+
+		# macOS associates both mousewheel events to <MouseWheel>
+		# but with opposite signs for 'event.delta'
+		elif system == 'darwin':
+			self.canvas.yview_scroll(-1 * event.delta, 'units')
+
+		# same for Windows, but the scrolling speed is scaled
+		elif system == 'win32':
+			self.canvas.yview_scroll(-1 * event.delta / 120, 'units')
+
+		print(self, event.delta, event.num)
 
 	########################################
 
