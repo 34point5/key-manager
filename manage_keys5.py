@@ -1012,124 +1012,6 @@ class Search(BaseWindowClass):
 
 ################################################################################
 
-def delete_password(choose_window):
-	'''
-	Wrapper function to instantiate the 'DeletePassword' class.
-
-	Args:
-		choose_window: the 'Choose' object whose window has to be hidden before displaying a new window
-
-	Returns:
-		None
-	'''
-
-	# hide the option choosing window
-	choose_window.parent.withdraw()
-
-	# obtain the row containing the password to be deleted
-	row_of_interest = locate_row_of_interest(choose_window)
-	if row_of_interest is None:
-		choose_window.parent.deiconify() # unhide the option choosing window
-		return
-	deleter = tk.Toplevel(choose_window.parent)
-	deleter_object = DeletePassword(deleter, row_of_interest)
-	deleter.mainloop()
-
-	# unhide the option choosing window
-	choose_window.parent.deiconify()
-
-################################################################################
-
-class DeletePassword(BaseWindowClass):
-	'''
-	Display the account which the user wants to delete from 'keys.csv' file.
-	Ask for confirmation before deleting.
-	'''
-
-	def __init__(self, parent, row_of_interest):
-		super().__init__(parent)
-		parent.title('Delete a Password')
-		self.row_of_interest = row_of_interest
-
-		# rename the comma-separated items for convenience
-		acc, uid, name, pw = row_of_interest.split(',')
-
-		# header
-		head_label = tk.Label(parent, text = 'Confirm Delete', font = titlefont)
-		head_label.grid(row = 0, columnspan = 2, padx = pad, pady = (pad, pad / 4))
-
-		# sub-header
-		subhead_label = tk.Label(parent, text = 'Confirm that you want to delete the password\nassociated with this account. This operation is\nirreversible.')
-		subhead_label.grid(row = 1, columnspan = 2, padx = pad, pady = (pad / 4, pad / 4))
-
-		# keyboard instruction
-		inst_label = tk.Label(parent, text = 'Press \'Esc\' to return to the main menu.')
-		inst_label.grid(row = 2, columnspan = 2, padx = pad, pady = (pad / 4, pad / 2))
-
-		# account question label
-		acc_q_label = tk.Label(parent, text = 'Account', font = subtitlefont)
-		acc_q_label.grid(row = 3, column = 0, padx = pad, pady = (pad / 2, pad / 4))
-
-		# account answer label
-		acc_a_label = tk.Label(parent, text = acc)
-		acc_a_label.grid(row = 3, column = 1, padx = pad, pady = (pad / 2, pad / 4))
-
-		# user ID question label
-		uid_q_label = tk.Label(parent, text = 'User ID', font = subtitlefont)
-		uid_q_label.grid(row = 4, column = 0, padx = pad, pady = pad / 4)
-
-		# user ID answer label
-		uid_a_label = tk.Label(parent, text = uid)
-		uid_a_label.grid(row = 4, column = 1, padx = pad, pady = pad / 4)
-
-		# user name question label
-		name_q_label = tk.Label(parent, text = 'User Name', font = subtitlefont)
-		name_q_label.grid(row = 5, column = 0, padx = pad, pady = (pad / 4, pad / 2))
-
-		# user name answer label
-		name_a_label = tk.Label(parent, text = name)
-		name_a_label.grid(row = 5, column = 1, padx = pad, pady = (pad / 4, pad / 2))
-
-		# delete the password line
-		self.submit = tk.Button(parent, text = 'Delete', height = h, width = w, command = self.remove_pass)
-		self.submit.grid(row = 6, columnspan = 2, padx = pad, pady = (pad / 2, pad))
-
-	########################################
-
-	def remove_pass(self):
-		'''
-		Copy all lines in 'keys.csv' (except the line to be deleted) to a new file.
-		Then rename the new file to 'keys.csv', thus deleting the password the user wanted to delete.
-
-		Args:
-			self: class object
-
-		Returns:
-			None
-		'''
-
-		# confirm and delete password
-		response = mb.askyesno('Confirmation', 'Delete password? This process cannot be undone.', icon = 'warning', parent = self.parent)
-		if response == False:
-			restore_focus_to(self.parent)
-			return
-		with open('keys.csv') as password_file, open('.keys', 'w') as updated_password_file:
-			for row in password_file:
-				row = row.strip()
-				if row != self.row_of_interest:
-					print(row, file = updated_password_file)
-
-		# clean up
-		os.remove('keys.csv')
-		os.rename('.keys', 'keys.csv')
-
-		mb.showinfo('Password Deleted', 'Password was deleted successfully.', parent = self.parent)
-
-		self.parent.quit()
-		self.parent.destroy()
-
-################################################################################
-
 def change_password(choose_window):
 	'''
 	Wrapper function to instantiate the 'ChangePassword' class.
@@ -1232,6 +1114,122 @@ class ChangePassword(AddPassword):
 
 ################################################################################
 
+def delete_password(choose_window):
+	'''
+	Wrapper function to instantiate the 'DeletePassword' class.
+
+	Args:
+		choose_window: the 'Choose' object whose window has to be hidden before displaying a new window
+
+	Returns:
+		None
+	'''
+
+	# hide the option choosing window
+	choose_window.parent.withdraw()
+
+	# obtain the row containing the password to be deleted
+	row_of_interest = locate_row_of_interest(choose_window)
+	if row_of_interest is None:
+		choose_window.parent.deiconify() # unhide the option choosing window
+		return
+	deleter = tk.Toplevel(choose_window.parent)
+	deleter_object = DeletePassword(deleter, row_of_interest)
+	deleter.mainloop()
+
+	# unhide the option choosing window
+	choose_window.parent.deiconify()
+
+################################################################################
+
+class DeletePassword(BaseWindowClass):
+	'''
+	Display the account which the user wants to delete from 'keys.csv' file.
+	Ask for confirmation before deleting.
+	'''
+
+	def __init__(self, parent, row_of_interest):
+		super().__init__(parent)
+		parent.title('Delete a Password')
+		self.row_of_interest = row_of_interest
+
+		# rename the comma-separated items for convenience
+		acc, uid, name, pw = row_of_interest.split(',')
+
+		# header
+		self.head_label = tk.Label(parent, text = 'Confirm Delete', font = titlefont)
+		self.head_label.grid(row = 0, columnspan = 2, padx = pad, pady = (pad, pad / 4))
+
+		# sub-header and keyboard instruction
+		self.subhead_label = tk.Label(parent, text = 'Deleting a password is an irreversible operation.\nPress \'Esc\' to abort and return to the main menu.')
+		self.subhead_label.grid(row = 1, columnspan = 2, padx = pad, pady = (pad / 4, pad / 2))
+
+		# account question label
+		acc_q_label = tk.Label(parent, text = 'Account', font = subtitlefont)
+		acc_q_label.grid(row = 2, column = 0, padx = pad, pady = (pad / 2, pad / 4))
+
+		# account answer label
+		acc_a_label = tk.Label(parent, text = acc)
+		acc_a_label.grid(row = 2, column = 1, padx = pad, pady = (pad / 2, pad / 4))
+
+		# user ID question label
+		uid_q_label = tk.Label(parent, text = 'User ID', font = subtitlefont)
+		uid_q_label.grid(row = 3, column = 0, padx = pad, pady = pad / 4)
+
+		# user ID answer label
+		uid_a_label = tk.Label(parent, text = uid)
+		uid_a_label.grid(row = 3, column = 1, padx = pad, pady = pad / 4)
+
+		# user name question label
+		name_q_label = tk.Label(parent, text = 'User Name', font = subtitlefont)
+		name_q_label.grid(row = 4, column = 0, padx = pad, pady = (pad / 4, pad / 2))
+
+		# user name answer label
+		name_a_label = tk.Label(parent, text = name)
+		name_a_label.grid(row = 4, column = 1, padx = pad, pady = (pad / 4, pad / 2))
+
+		# delete the password line
+		# when this class is inherited by 'ViewPassword', I'll add something in row 5
+		# hence, row number being 6 is intentional
+		self.submit = tk.Button(parent, text = 'Delete', height = h, width = w, command = self.remove)
+		self.submit.grid(row = 6, columnspan = 2, padx = pad, pady = (pad / 2, pad))
+
+	########################################
+
+	def remove(self):
+		'''
+		Copy all lines in 'keys.csv' (except the line to be deleted) to a new file.
+		Then rename the new file to 'keys.csv', thus deleting the password the user wanted to delete.
+
+		Args:
+			self: class object
+
+		Returns:
+			None
+		'''
+
+		# confirm and delete password
+		response = mb.askyesno('Confirmation', 'Delete password? This process cannot be undone.', icon = 'warning', parent = self.parent)
+		if response == False:
+			restore_focus_to(self.parent)
+			return
+		with open('keys.csv') as password_file, open('.keys', 'w') as updated_password_file:
+			for row in password_file:
+				row = row.strip()
+				if row != self.row_of_interest:
+					print(row, file = updated_password_file)
+
+		# clean up
+		os.remove('keys.csv')
+		os.rename('.keys', 'keys.csv')
+
+		mb.showinfo('Password Deleted', 'Password was deleted successfully.', parent = self.parent)
+
+		self.parent.quit()
+		self.parent.destroy()
+
+################################################################################
+
 def view_password(choose_window):
 	'''
 	Wrapper function to instantiate the 'ViewPassword' class.
@@ -1260,61 +1258,36 @@ def view_password(choose_window):
 
 ################################################################################
 
-class ViewPassword(BaseWindowClass):
+class ViewPassword(DeletePassword):
 	'''
 	Display a password in raw form.
+	It inherits the 'DeletePassword' class, so only the self.submit behaviour needs changing.
 	'''
 
 	def __init__(self, parent, key, row_of_interest):
-		super().__init__(parent)
+		super().__init__(parent, row_of_interest)
 		parent.title('View a Password')
 
 		# rename credentials for convenience
 		acc, uid, name, pw = row_of_interest.split(',')
 
 		# header
-		head_label = tk.Label(parent, text = 'View Credentials', font = titlefont)
-		head_label.grid(row = 0, columnspan = 2, padx = pad, pady = (pad, pad / 4))
+		self.head_label['text'] = 'View Credentials'
 
 		# sub-header
-		subhead_label = tk.Label(parent, text = 'Your credentials are as shown.')
-		subhead_label.grid(row = 1, columnspan = 2, padx = pad, pady = (pad / 4, pad / 2))
-
-		# account question label
-		acc_q_label = tk.Label(parent, text = 'Account', font = subtitlefont)
-		acc_q_label.grid(row = 2, column = 0, padx = pad, pady = (pad / 2, pad / 4))
-
-		# account answer label
-		acc_a_label = tk.Label(parent, text = acc)
-		acc_a_label.grid(row = 2, column = 1, padx = pad, pady = (pad / 2, pad / 4))
-
-		# user ID question label
-		uid_q_label = tk.Label(parent, text = 'User ID', font = subtitlefont)
-		uid_q_label.grid(row = 3, column = 0, padx = pad, pady = pad / 4)
-
-		# user ID answer label
-		uid_a_label = tk.Label(parent, text = uid)
-		uid_a_label.grid(row = 3, column = 1, padx = pad, pady = pad / 4)
-
-		# user name question label
-		name_q_label = tk.Label(parent, text = 'User Name', font = subtitlefont)
-		name_q_label.grid(row = 4, column = 0, padx = pad, pady = pad / 4)
-
-		# user name answer label
-		name_a_label = tk.Label(parent, text = name)
-		name_a_label.grid(row = 4, column = 1, padx = pad, pady = pad / 4)
+		self.subhead_label['text'] = 'Your credentials are as shown.'
 
 		# password question label
 		pw_q_label = tk.Label(parent, text = 'Password', font = subtitlefont)
-		pw_q_label.grid(row = 5, column = 0, padx = pad, pady = (pad / 4, pad / 2))
+		pw_q_label.grid(row = 5, column = 0, padx = pad, pady = (0, pad / 2))
 
 		# password answer label
 		pw_a_label = tk.Label(parent, text = decryptAES(pw, key))
-		pw_a_label.grid(row = 5, column = 1, padx = pad, pady = (pad / 4, pad / 2))
+		pw_a_label.grid(row = 5, column = 1, padx = pad, pady = (0, pad / 2))
 
 		# return to main menu
-		self.submit = tk.Button(parent, text = 'Done', height = h, width = w, command = self.close_button)
-		self.submit.grid(row = 6, columnspan = 2, padx = pad, pady = (pad / 2, pad))
+		self.submit['text'] = 'Done'
+		self.submit['command'] = self.close_button
 
 ################################################################################
 
