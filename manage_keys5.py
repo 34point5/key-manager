@@ -21,12 +21,13 @@ import tkinter.messagebox as mb
 ################################################################################
 
 # some settings
-titlefont = 'Noto 15 bold' # window head label font
-subtitlefont = 'Noto 10 bold' # font used by label associated with an Entry
+titlefont = ('Georgia', '15', 'bold') # window head label font
+subtitlefont = ('Georgia', '10', 'bold') # font used by label associated with an Entry
 passlength = 18 # length of the random password generated
 phraselength = 1 # minimum passphrase length required while changing passphrase
 pad = 30 # the padding used for tkinter widgets
 h, w = 2, 20 # main button sizes
+system = sys.platform # operating system
 
 ################################################################################
 
@@ -79,10 +80,10 @@ def encryptAES(plaintext, key):
 		key: stream of bytes (256-bit encryption key)
 
 	Returns:
-		base64-encoded ciphertext (encrypted version of plaintext) string
+		base64-encoded ciphertext (encrypted plaintext) string
 	'''
 
-	initialization_vector = RND.new().read(AES.block_size);
+	initialization_vector = RND.new().read(AES.block_size)
 	encryption_suite = AES.new(key, AES.MODE_CFB, initialization_vector)
 	composite = initialization_vector + encryption_suite.encrypt(plaintext.encode())
 	ciphertext = base64.b64encode(composite).decode()
@@ -98,10 +99,10 @@ def decryptAES(ciphertext, key):
 
 	Args:
 		ciphertext: base64-encoded string to be decrypted
-		AES_key: stream of bytes (256-bit encryption key) (same as encryption key above)
+		key: stream of bytes (256-bit encryption key) (same as encryption key above)
 
 	Returns:
-		plaintext (decrypted version of plaintext) string
+		plaintext (decrypted ciphertext) string
 	'''
 
 	ciphertext = base64.b64decode(ciphertext.encode())
@@ -210,7 +211,6 @@ class BaseWindowClass:
 		parent.bind('<Return>', self.press_enter)
 
 		# cross-platform trick to set application icon
-		system = sys.platform
 		if system == 'linux' or system == 'darwin':
 			# parent.tk.call('wm', 'iconphoto', parent._w, tk.PhotoImage(file = 'wpm.gif'))
 			parent.iconphoto(True, tk.PhotoImage(file = 'favicon.gif'))
@@ -230,7 +230,7 @@ class BaseWindowClass:
 
 	def press_enter(self, event = None):
 		'''
-		When the user presses 'Return', decide what action to perform.
+		When the user presses '<Return>', decide what action to perform.
 		If the widget in focus is a button, invoke its action.
 		Else, invoke the action of the 'submit' button.
 		If the class does not have a 'submit' attribute, do nothing.
@@ -359,6 +359,7 @@ class Choose(BaseWindowClass):
 	Change a password.
 	View a password.
 	Change the passphrase.
+	Display a window with buttons for these options.
 	'''
 
 	def __init__(self, parent, key):
@@ -406,7 +407,7 @@ def add_password(choose_window):
 	Wrapper function to instantiate 'AddPassword' class.
 
 	Args:
-		choose_window: the Choose object whose window has to be hidden before displaying a new window
+		choose_window: the 'Choose' object whose window has to be hidden before displaying a new window
 
 	Returns:
 		None
@@ -535,7 +536,6 @@ class AddPassword(BaseWindowClass):
 
 		Args:
 			self: class object
-			credentials: list of credential strings the user entered
 
 		Returns:
 			None
@@ -544,8 +544,8 @@ class AddPassword(BaseWindowClass):
 		# create a list of the entries which have to be validated
 		entries = [self.acc_entry, self.uid_entry, self.name_entry, self.pw_entry, self.cp_entry]
 
-		# this should check for empty Entries
-		# the first empty Entry should get focus after a specific error message is displayed
+		# this should check for empty entries
+		# the first empty Entry should get focus after an error message is displayed
 		for entry in entries:
 			if entry.get() == '':
 				mb.showerror('Empty Field', 'One or more fields are empty. Fill all of them to proceed.', parent = self.parent)
@@ -571,17 +571,16 @@ class AddPassword(BaseWindowClass):
 		# this class will be inherited by 'ChangePassword' class
 		# in the latter class, only that function will have to be changed
 		# so that in 'ChangePassword', the function changes instead of adds password
-		self.add_or_change(entries[: -1]) # no need to send 'Confirm Password'
+		self.add_or_change()
 
 	########################################
 
-	def add_or_change(self, entries):
+	def add_or_change(self):
 		'''
 		Add the credentials provided to 'keys.csv' file.
 
 		Args:
 			self: class object
-			entries: list of entries which contain credentials to be written to 'keys.csv'
 
 		Returns:
 			None
@@ -594,8 +593,11 @@ class AddPassword(BaseWindowClass):
 			restore_focus_to(self.parent, previously_focused_widget)
 			return
 
-		# obtain the strings in the entries provided
-		acc, uid, name, pw = [entry.get() for entry in entries]
+		# obtain the strings in the entries
+		acc = self.acc_entry.get()
+		uid = self.uid_entry.get()
+		name = self.name_entry.get()
+		pw = self.pw_entry.get()
 
 		# write the credentials to the file 'keys.csv'
 		with open('keys.csv', 'a') as password_file:
@@ -610,10 +612,10 @@ class AddPassword(BaseWindowClass):
 
 def change_passphrase(choose_window):
 	'''
-	Wrapper function to instantiate the ChangePassphrase class.
+	Wrapper function to instantiate the 'ChangePassphrase' class.
 
 	Args:
-		choose_window: the Choose object whose window has to be hidden before displaying a new window
+		choose_window: the 'Choose' object whose window has to be hidden before displaying a new window
 
 	Returns:
 		None
@@ -702,9 +704,6 @@ class ChangePassphrase(BaseWindowClass):
 
 		Args:
 			self: class object
-			pp: new passphrase string
-			cp: confirm passphrase string
-			hint: passphrase hint string
 
 		Returns:
 			None
@@ -777,10 +776,10 @@ def locate_row_of_interest(choose_window):
 	Instantiates 'Search' class.
 
 	Args:
-		choose_window: the Choose object whose window is required to create a tk.Toplevel
+		choose_window: the 'Choose' object whose window is required to create a tk.Toplevel
 
 	Returns:
-		string (a row in 'keys.csv') which the user wants to change, delete or view (if a search is performed)
+		string (a row in 'keys.csv') which the user wants to change, delete or view (if search is performed)
 		None (if search is not performed)
 	'''
 
@@ -820,6 +819,7 @@ class Search(BaseWindowClass):
 			self.everything = password_file.readlines()
 
 		# whenever the user types something new, update the search results
+		# self.searchvar.trace('w', lambda *dummy : self.populate_frame_canvas(self)) # 'trace' is deprecated
 		self.searchvar.trace_add('write', lambda *dummy : self.populate_frame_canvas(self))
 
 		# frame to display headings and tk.Entry
@@ -896,9 +896,6 @@ class Search(BaseWindowClass):
 			None
 		'''
 
-		# find out the operating system
-		system = sys.platform
-
 		# GNU Linux associates <Button-5> to a mousewheel down event
 		# and <Button-4> to a mousewheel up event
 		if system == 'linux':
@@ -922,7 +919,7 @@ class Search(BaseWindowClass):
 
 	def populate_frame_canvas(self, event = None):
 		'''
-		Scan the string the user typed in the 'search_entry'.
+		Scan the string the user typed in the 'self.search_entry'.
 		If this is empty, populate the frame with everything in 'keys.csv'.
 		Otherwise, populate it with whatever matches the string.
 
@@ -953,6 +950,7 @@ class Search(BaseWindowClass):
 				rb.grid(row = i, column = 0)
 
 				# break the string 'row'
+				# will call 'strip' while setting 'self.row_of_interest'
 				acc, uid, name, pw = row.split(',')
 
 				# account label
@@ -1009,17 +1007,17 @@ class Search(BaseWindowClass):
 		# becuse nothing gets appended to it in above 'populate_frame_canvas' function
 		# hence, IndexError will occur
 		except IndexError:
-			mb.showerror('Nothing Found', 'The item you are searching for could not be found in your password file.')
+			mb.showerror('Nothing Found', 'The item you are searching for could not be found in your password file.', parent = self.parent)
 			restore_focus_to(self.parent, self.search_entry)
 
 ################################################################################
 
 def delete_password(choose_window):
 	'''
-	Wrapper function to instantiate the DeletePassword class.
+	Wrapper function to instantiate the 'DeletePassword' class.
 
 	Args:
-		choose_window: the Choose object whose window has to be hidden before displaying a new window
+		choose_window: the 'Choose' object whose window has to be hidden before displaying a new window
 
 	Returns:
 		None
@@ -1105,7 +1103,6 @@ class DeletePassword(BaseWindowClass):
 
 		Args:
 			self: class object
-			row_of_interest: the row (string) to be removed from 'keys.csv'
 
 		Returns:
 			None
@@ -1135,10 +1132,10 @@ class DeletePassword(BaseWindowClass):
 
 def change_password(choose_window):
 	'''
-	Wrapper function to instantiate the ChangePassword class.
+	Wrapper function to instantiate the 'ChangePassword' class.
 
 	Args:
-		choose_window: the Choose object whose window has to be hidden before displaying a new window
+		choose_window: the 'Choose' object whose window has to be hidden before displaying a new window
 
 	Returns:
 		None
@@ -1163,8 +1160,8 @@ def change_password(choose_window):
 
 class ChangePassword(AddPassword):
 	'''
-	Mostly the same as AddPassword, hence inheriting it rather than BaseWindowClass.
-	Only some labels and the behaviour of 'self.submit' are different.
+	Mostly the same as 'AddPassword', hence inheriting it rather than 'BaseWindowClass'.
+	Only 'self.submit' is different.
 	'''
 
 	def __init__(self, parent, key, row_of_interest):
@@ -1187,7 +1184,7 @@ class ChangePassword(AddPassword):
 
 	########################################
 
-	def add_or_change(self, entries):
+	def add_or_change(self):
 		'''
 		Inherited from 'AddPassword', where this function adds a new line to 'keys.csv'
 		In this class, it must change the line which matches 'self.row_of_interest'
@@ -1209,8 +1206,11 @@ class ChangePassword(AddPassword):
 			restore_focus_to(self.parent, previously_focused_widget)
 			return
 
-		# obtain the strings in the entries provided
-		acc, uid, name, pw = [entry.get() for entry in entries]
+		# obtain the strings in the entries
+		acc = self.acc_entry.get()
+		uid = self.uid_entry.get()
+		name = self.name_entry.get()
+		pw = self.pw_entry.get()
 
 		# write the new credentials to a new file
 		with open('keys.csv') as password_file, open('.keys', 'w') as updated_password_file:
@@ -1234,10 +1234,10 @@ class ChangePassword(AddPassword):
 
 def view_password(choose_window):
 	'''
-	Wrapper function to instantiate the ViewPassword class.
+	Wrapper function to instantiate the 'ViewPassword' class.
 
 	Args:
-		choose_window: the Choose object whose window has to be hidden before displaying a new window
+		choose_window: the 'Choose' object whose window has to be hidden before displaying a new window
 
 	Returns:
 		None
