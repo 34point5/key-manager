@@ -907,11 +907,11 @@ class Search(BaseWindowClass):
 		# macOS associates both mousewheel events to <MouseWheel>
 		# but with opposite signs for 'event.delta'
 		elif system == 'darwin':
-			self.canvas.yview_scroll(-1 * event.delta, 'units')
+			self.canvas.yview_scroll(int(-1 * event.delta), 'units')
 
 		# same for Windows, but the scrolling speed is scaled
 		elif system == 'win32':
-			self.canvas.yview_scroll(-1 * event.delta / 120, 'units')
+			self.canvas.yview_scroll(int(-1 * event.delta / 120), 'units')
 
 		print(self, event.delta, event.num)
 
