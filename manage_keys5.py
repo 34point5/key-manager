@@ -21,8 +21,8 @@ import tkinter.messagebox as mb
 ################################################################################
 
 # some settings
-titlefont = ('Georgia', '15', 'bold') # window head label font
-subtitlefont = ('Georgia', '10', 'bold') # font used by label associated with an Entry
+titlefont = ('', 15, 'bold') # window head label font
+subtitlefont = ('', 10, 'bold') # font used by label associated with an Entry
 passlength = 18 # length of the random password generated
 phraselength = 1 # minimum passphrase length required while changing passphrase
 pad = 30 # the padding used for tkinter widgets
@@ -143,6 +143,24 @@ def restore_focus_to(window, widget = None):
 
 ################################################################################
 
+def move_to_center(parent):
+	
+	# calculate widget sizes
+	# parent.update_idletasks()
+	
+	screen_width = parent.winfo_screenwidth()
+	screen_height = parent.winfo_screenheight()
+	# print(screen_width, screen_height)
+	# print(parent.geometry())
+	window_width, window_height = [int(_) for _ in parent.geometry().split('+')[0].split('x')]
+	print(window_width, window_height)
+	x = int((screen_width - window_width) / 2)
+	y = int((screen_height - window_height) / 2)
+	parent.geometry('+{}+{}'.format(x, 0))
+
+
+################################################################################
+
 class CreateTooltip:
 	'''
 	Display a hint when the mouse hovers over a widget.
@@ -216,6 +234,10 @@ class BaseWindowClass:
 			parent.iconphoto(True, tk.PhotoImage(file = 'favicon.gif'))
 		elif system == 'win32':
 			parent.iconbitmap('favicon.ico')
+		
+		# move window to the centre of the screen
+		# using American spelling in the name as per PEP guideline
+		move_to_center(parent)
 
 		# always steal focus when created
 		parent.focus_force()
@@ -819,8 +841,10 @@ class Search(BaseWindowClass):
 			self.everything = password_file.readlines()
 
 		# whenever the user types something new, update the search results
-		# self.searchvar.trace('w', lambda *dummy : self.populate_frame_canvas(self)) # 'trace' is deprecated
-		self.searchvar.trace_add('write', lambda *dummy : self.populate_frame_canvas(self))
+		try:
+			self.searchvar.trace_add('write', lambda *dummy : self.populate_frame_canvas(self))
+		except AttributeError:
+			self.searchvar.trace('w', lambda *dummy : self.populate_frame_canvas(self)) # 'trace' is deprecated
 
 		# frame to display headings and tk.Entry
 		topframe = tk.Frame(parent)
@@ -912,8 +936,6 @@ class Search(BaseWindowClass):
 		# same for Windows, but the scrolling speed is scaled
 		elif system == 'win32':
 			self.canvas.yview_scroll(int(-1 * event.delta / 120), 'units')
-
-		print(self, event.delta, event.num)
 
 	########################################
 
