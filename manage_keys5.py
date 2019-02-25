@@ -143,20 +143,32 @@ def restore_focus_to(window, widget = None):
 
 ################################################################################
 
-def move_to_center(parent):
-	
-	# calculate widget sizes
-	# parent.update_idletasks()
-	
-	screen_width = parent.winfo_screenwidth()
-	screen_height = parent.winfo_screenheight()
-	# print(screen_width, screen_height)
-	# print(parent.geometry())
-	window_width, window_height = [int(_) for _ in parent.geometry().split('+')[0].split('x')]
-	print(window_width, window_height)
-	x = int((screen_width - window_width) / 2)
-	y = int((screen_height - window_height) / 2)
-	parent.geometry('+{}+{}'.format(x, 0))
+def move_to_center(win):
+
+	win.update()
+	w_req, h_req = win.winfo_width(), win.winfo_height()
+	w_form = win.winfo_rootx() - win.winfo_x()
+	w = w_req + w_form*2
+	h = h_req + (win.winfo_rooty() - win.winfo_y()) + w_form
+	x = (win.winfo_screenwidth() // 2) - (w // 2)
+	y = (win.winfo_screenheight() // 2) - (h // 2)
+	# win.geometry('{0}x{1}+{2}+{3}'.format(w_req, h_req, x, y))
+
+	# # calculate widget sizes
+	# parent.update()
+	# # parent.update_idletasks()
+	#
+	# screen_width = parent.winfo_screenwidth()
+	# screen_height = parent.winfo_screenheight()
+	# window_width = parent.winfo_width()
+	# window_height = parent.winfo_height()
+	# # print(screen_width, screen_height)
+	# # print(parent.geometry())
+	# # window_width, window_height = [int(_) for _ in parent.geometry().split('+')[0].split('x')]
+	# print(screen_width, screen_height, window_width, window_height)
+	# # x = int((screen_width - window_width) / 2)
+	# # y = int((screen_height - window_height) / 2)
+	# # parent.geometry('+{}+{}'.format(x, 0))
 
 
 ################################################################################
@@ -234,7 +246,7 @@ class BaseWindowClass:
 			parent.iconphoto(True, tk.PhotoImage(file = 'favicon.gif'))
 		elif system == 'win32':
 			parent.iconbitmap('favicon.ico')
-		
+
 		# move window to the centre of the screen
 		# using American spelling in the name as per PEP guideline
 		move_to_center(parent)
@@ -293,7 +305,7 @@ class Login(BaseWindowClass):
 		head_label.grid(row = 0, columnspan = 2, padx = pad, pady = (pad, pad / 4))
 
 		# keyboard instruction
-		inst_label = tk.Label(parent, text = 'Press \'Esc\' to quit the application.')
+		inst_label = tk.Label(parent, text = 'Press [Esc] to quit the application.')
 		inst_label.grid(row = 1, columnspan = 2, padx = pad, pady = (pad / 4, pad / 2))
 
 		# passphrase prompt entry
@@ -394,7 +406,7 @@ class Choose(BaseWindowClass):
 		head_label.grid(row = 0, columnspan = 2, padx = pad, pady = (pad, pad / 4))
 
 		# keyboard instruction
-		inst_label = tk.Label(parent, text = 'Press \'Esc\' to quit the application.')
+		inst_label = tk.Label(parent, text = 'Press [Esc] to quit the application.')
 		inst_label.grid(row = 1, columnspan = 2, padx = pad, pady = (pad / 4, pad / 2))
 
 		# add password
@@ -471,7 +483,7 @@ class AddPassword(BaseWindowClass):
 		head_label.grid(row = 0, columnspan = 2, padx = pad, pady = (pad, pad / 4))
 
 		# keyboard instruction
-		inst_label = tk.Label(parent, text = 'Press \'Esc\' to return to the main menu.')
+		inst_label = tk.Label(parent, text = 'Press [Esc] to return to the main menu.')
 		inst_label.grid(row = 1, columnspan = 2, padx = pad, pady = (pad / 4, pad / 2))
 
 		# account prompt label
@@ -677,43 +689,39 @@ class ChangePassphrase(BaseWindowClass):
 		head_label = tk.Label(parent, text = 'Enter new Passphrase', font = titlefont)
 		head_label.grid(row = 0, columnspan = 2, padx = pad, pady = (pad, pad / 4))
 
-		# sub-header
-		subhead_label = tk.Label(parent, text = 'Use a long easy-to-remember passphrase.\nAvoid a short random one. Include special characters!')
-		subhead_label.grid(row = 1, columnspan = 2, padx = pad, pady = pad / 4)
-
 		# keyboard instruction
-		inst_label = tk.Label(parent, text = 'Press \'Esc\' to return to the main menu.')
-		inst_label.grid(row = 2, columnspan = 2, padx = pad, pady = (pad / 4, pad / 2))
+		inst_label = tk.Label(parent, text = 'Press [Esc] to return to the main menu.')
+		inst_label.grid(row = 1, columnspan = 2, padx = pad, pady = (pad / 4, pad / 2))
 
 		# passphrase hint prompt label
 		hint_label = tk.Label(parent, text = 'Passphrase Hint', font = subtitlefont)
-		hint_label.grid(row = 5, column = 0, padx = pad, pady = (pad / 4, pad / 2))
+		hint_label.grid(row = 4, column = 0, padx = pad, pady = (pad / 4, pad / 2))
 
 		# passphrase prompt entry
 		self.pp_entry = tk.Entry(parent, show = '*')
-		self.pp_entry.grid(row = 3, column = 1, padx = pad, pady = (pad / 2, pad / 4))
+		self.pp_entry.grid(row = 2, column = 1, padx = pad, pady = (pad / 2, pad / 4))
 		self.pp_entry.focus()
 
 		# confirm passphrase prompt entry
 		self.cp_entry = tk.Entry(parent, show = '*')
-		self.cp_entry.grid(row = 4, column = 1, padx = pad, pady = pad / 4)
+		self.cp_entry.grid(row = 3, column = 1, padx = pad, pady = pad / 4)
 
 		# passphrase hint prompt entry
 		self.hint_entry = tk.Entry(parent)
-		self.hint_entry.grid(row = 5, column = 1, padx = pad, pady = (pad / 4, pad / 2))
+		self.hint_entry.grid(row = 4, column = 1, padx = pad, pady = (pad / 4, pad / 2))
 
 		# change the passphrase
 		self.submit = tk.Button(parent, text = 'Change', height = h, width = w, command = self.update_phrase)
-		self.submit.grid(row = 6, columnspan = 2, padx = pad, pady = (pad / 2, pad))
+		self.submit.grid(row = 5, columnspan = 2, padx = pad, pady = (pad / 2, pad))
 
 		# toggle passphrase view
 		pp_button = tk.Button(parent, text = 'New Passphrase', font = subtitlefont, command = lambda : show_pass(self.pp_entry))
-		pp_button.grid(row = 3, column = 0, padx = pad, pady = (pad / 2, pad / 4))
+		pp_button.grid(row = 2, column = 0, padx = pad, pady = (pad / 2, pad / 4))
 		CreateTooltip(pp_button, 'Show or hide passphrase')
 
 		# toggle confirm passphrase view
 		cp_button = tk.Button(parent, text = 'Confirm Passphrase', font = subtitlefont, command = lambda : show_pass(self.cp_entry))
-		cp_button.grid(row = 4, column = 0, padx = pad, pady = pad / 4)
+		cp_button.grid(row = 3, column = 0, padx = pad, pady = pad / 4)
 		CreateTooltip(cp_button, 'Show or hide passphrase')
 
 	########################################
@@ -738,7 +746,7 @@ class ChangePassphrase(BaseWindowClass):
 
 		# check passphrase length
 		if len(pp) < phraselength:
-			mb.showerror('Invalid Passphrase', 'The passphrase should be at least {} characters long.'.format(phraselength), parent = self.parent)
+			mb.showerror('Invalid Passphrase', 'The passphrase should be at least {} characters long. Enter something which would be easy for you (and only you) to remember, and memorable, too.\nFor instance: mY daughter likes to play foootball in tHe rain.'.format(phraselength), parent = self.parent)
 			restore_focus_to(self.parent, self.pp_entry)
 			return
 
@@ -854,21 +862,17 @@ class Search(BaseWindowClass):
 		head_label = tk.Label(topframe, text = 'Search Accounts', font = titlefont)
 		head_label.grid(row = 0, columnspan = 2, padx = pad, pady = (0, pad / 4))
 
-		# sub-header
-		subhead_label = tk.Label(topframe, text = 'Enter a search term to narrow the list down.')
+		# sub-header and keyboard instruction
+		subhead_label = tk.Label(topframe, text = 'Enter a search term to narrow the list down.\nPress [Esc] to return to the main menu.')
 		subhead_label.grid(row = 1, columnspan = 2, padx = pad, pady = pad / 4)
-
-		# keyboard instruction
-		inst_label = tk.Label(topframe, text = 'Press \'Esc\' to return to the main menu.')
-		inst_label.grid(row = 2, columnspan = 2, padx = pad, pady = (pad / 4, pad / 2))
 
 		# search prompt label
 		search_label = tk.Label(topframe, text = 'Search Term', font = subtitlefont)
-		search_label.grid(row = 3, column = 0, padx = pad, pady = (pad / 2, 0))
+		search_label.grid(row = 2, column = 0, padx = pad, pady = (pad / 2, 0))
 
 		# search prompt entry
 		self.search_entry = tk.Entry(topframe, textvariable = self.searchvar)
-		self.search_entry.grid(row = 3, column = 1, padx = pad, pady = (pad / 2, 0))
+		self.search_entry.grid(row = 2, column = 1, padx = pad, pady = (pad / 2, 0))
 		self.search_entry.focus()
 
 		# frame to contain scrollable canvas
@@ -1029,7 +1033,7 @@ class Search(BaseWindowClass):
 		# becuse nothing gets appended to it in above 'populate_frame_canvas' function
 		# hence, IndexError will occur
 		except IndexError:
-			mb.showerror('Nothing Found', 'The item you are searching for could not be found in your password file.', parent = self.parent)
+			mb.showerror('Nothing Found', 'The string \'{}\' could not be found in your password file.'.format(self.searchvar.get()), parent = self.parent)
 			restore_focus_to(self.parent, self.search_entry)
 
 ################################################################################
@@ -1183,7 +1187,7 @@ class DeletePassword(BaseWindowClass):
 		self.head_label.grid(row = 0, columnspan = 2, padx = pad, pady = (pad, pad / 4))
 
 		# sub-header and keyboard instruction
-		self.subhead_label = tk.Label(parent, text = 'Deleting a password is an irreversible operation.\nPress \'Esc\' to abort and return to the main menu.')
+		self.subhead_label = tk.Label(parent, text = 'Deleting a password is an irreversible operation.\nPress [Esc] to abort and return to the main menu.')
 		self.subhead_label.grid(row = 1, columnspan = 2, padx = pad, pady = (pad / 4, pad / 2))
 
 		# account question label
@@ -1269,6 +1273,12 @@ def view_password(choose_window):
 	# obtain the row containing the password to be viewed
 	row_of_interest = locate_row_of_interest(choose_window)
 	if row_of_interest is None:
+		choose_window.parent.deiconify()
+		return
+	
+	# ask if it is OK to display the password on the screen
+	response = mb.askyesno('Confirmation', 'Are you sure you want the password to be displayed?', icon = 'warning', parent = choose_window.parent)
+	if response == False:
 		choose_window.parent.deiconify()
 		return
 	viewer = tk.Toplevel(choose_window.parent)
