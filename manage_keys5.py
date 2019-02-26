@@ -143,33 +143,46 @@ def restore_focus_to(window, widget = None):
 
 ################################################################################
 
-def move_to_center(win):
-
+def move_to_center_of_screen(win):
+	'''
+	Place the window 'win' in the centre of the screen.
+	Coordinates of top left corner of 'win' will be (X, Y).
+	x = (screenwidth - windowwidth) / 2
+	y = (screenheight - windowheight) / 2
+	Getting 'windowwidth' and 'windowheight' is not straightforward.
+	
+	winfo_width() = width of 'win' excluding outer frame
+	winfo_rootx() = x-coordinate of top left point of 'win'
+	winfo_x()     = x-coordinate of top left point of 'win' excluding outer frame
+	w_form        = width of this above-mentioned frame
+	w             = total effective width of 'win'
+	
+	winfo_height() = height of 'win' excluding title bar (top) and outer frame (bottom)
+	winfo_rooty()  = y-coordinate of top left point of 'win'
+	winfo_y()      = y-coordinate of top left point of 'win' excluding title bar
+	h              = total effecive height of 'win'
+	
+	The 'geometry' method requires the size of 'win' excluding outer frame along with the coordinates of the top left point of 'win'.
+	
+	https://stackoverflow.com/questions/3352918
+	'''
+	
+	# update and get size of the window without outer frame
 	win.update()
 	w_req, h_req = win.winfo_width(), win.winfo_height()
+	
+	# calculate actual width and height of the window
 	w_form = win.winfo_rootx() - win.winfo_x()
-	w = w_req + w_form*2
-	h = h_req + (win.winfo_rooty() - win.winfo_y()) + w_form
-	x = (win.winfo_screenwidth() // 2) - (w // 2)
-	y = (win.winfo_screenheight() // 2) - (h // 2)
-	# win.geometry('{0}x{1}+{2}+{3}'.format(w_req, h_req, x, y))
-
-	# # calculate widget sizes
-	# parent.update()
-	# # parent.update_idletasks()
-	#
-	# screen_width = parent.winfo_screenwidth()
-	# screen_height = parent.winfo_screenheight()
-	# window_width = parent.winfo_width()
-	# window_height = parent.winfo_height()
-	# # print(screen_width, screen_height)
-	# # print(parent.geometry())
-	# # window_width, window_height = [int(_) for _ in parent.geometry().split('+')[0].split('x')]
-	# print(screen_width, screen_height, window_width, window_height)
-	# # x = int((screen_width - window_width) / 2)
-	# # y = int((screen_height - window_height) / 2)
-	# # parent.geometry('+{}+{}'.format(x, 0))
-
+	w = w_req + 2 * w_form
+	h = h_req + win.winfo_rooty() - win.winfo_y() + w_form
+	
+	# place the window in the centre
+	# point to note: it appears that this can be used only once
+	# if a class uses this, then its child class does not get centred on using this
+	# hence, before calling this in any base class, check class name
+	x = (win.winfo_screenwidth() - w) // 2
+	y = (win.winfo_screenheight() - h) // 2
+	win.geometry('{}x{}+{}+{}'.format(w_req, h_req, x, y))
 
 ################################################################################
 
@@ -247,10 +260,6 @@ class BaseWindowClass:
 		elif system == 'win32':
 			parent.iconbitmap('favicon.ico')
 
-		# move window to the centre of the screen
-		# using American spelling in the name as per PEP guideline
-		move_to_center(parent)
-
 		# always steal focus when created
 		parent.focus_force()
 
@@ -325,6 +334,8 @@ class Login(BaseWindowClass):
 		# check if password is correct and proceed
 		self.submit = tk.Button(parent, text = 'Log In', height = h, width = w, command = self.validate_phrase)
 		self.submit.grid(row = 4, columnspan = 2, padx = pad, pady = (pad / 4, pad))
+		
+		move_to_center_of_screen(parent)
 
 	########################################
 
@@ -428,6 +439,8 @@ class Choose(BaseWindowClass):
 		# change passphrase button
 		cpp_button = tk.Button(parent, text = 'Change Passphrase', height = h, width = w, command = lambda : change_passphrase(self))
 		cpp_button.grid(row = 4, columnspan = 2, padx = pad, pady = (pad / 4, pad))
+		
+		move_to_center_of_screen(parent)
 
 	########################################
 
@@ -448,6 +461,7 @@ def add_password(choose_window):
 	'''
 
 	# hide the option choosing window
+	previously_focused_widget = choose_window.parent.focus_get()
 	choose_window.parent.withdraw()
 
 	adder = tk.Toplevel(choose_window.parent)
@@ -456,7 +470,7 @@ def add_password(choose_window):
 
 	# unhide the option choosing window
 	choose_window.parent.deiconify()
-	# choose_window.parent.focus_force()
+	restore_focus_to(choose_window.parent, previously_focused_widget)
 
 ################################################################################
 
@@ -542,6 +556,9 @@ class AddPassword(BaseWindowClass):
 		cpass_button = tk.Button(parent, text = 'Confirm Password', font = subtitlefont, command = lambda : show_pass(self.cp_entry))
 		cpass_button.grid(row = 7, column = 0, padx = pad, pady = (pad / 4, pad / 2))
 		CreateTooltip(cpass_button, 'Show or hide password')
+		
+		if self.__class__ == AddPassword:
+			move_to_center_of_screen(parent)
 
 	########################################
 
@@ -656,6 +673,7 @@ def change_passphrase(choose_window):
 	'''
 
 	# hide the option choosing window
+	previously_focused_widget = choose_window.parent.focus_get()
 	choose_window.parent.withdraw()
 
 	updater = tk.Toplevel(choose_window.parent)
@@ -665,7 +683,7 @@ def change_passphrase(choose_window):
 
 	# unhide the option choosing window
 	choose_window.parent.deiconify()
-	# choose_window.parent.focus_force()
+	restore_focus_to(choose_window.parent, previously_focused_widget)
 
 ################################################################################
 
@@ -723,6 +741,8 @@ class ChangePassphrase(BaseWindowClass):
 		cp_button = tk.Button(parent, text = 'Confirm Passphrase', font = subtitlefont, command = lambda : show_pass(self.cp_entry))
 		cp_button.grid(row = 3, column = 0, padx = pad, pady = pad / 4)
 		CreateTooltip(cp_button, 'Show or hide passphrase')
+		
+		move_to_center_of_screen(parent)
 
 	########################################
 
@@ -906,6 +926,8 @@ class Search(BaseWindowClass):
 		# choose the radio button selected
 		self.submit = tk.Button(parent, text = 'Select', height = h, width = w, command = self.set_row)
 		self.submit.grid(row = 2, padx = pad, pady = (pad / 2, pad))
+		
+		move_to_center_of_screen(parent)
 
 	########################################
 
@@ -1050,6 +1072,7 @@ def change_password(choose_window):
 	'''
 
 	# hide the option choosing window
+	previously_focused_widget = choose_window.parent.focus_get()
 	choose_window.parent.withdraw()
 
 	# obtain the row containing the password to be changed
@@ -1063,6 +1086,7 @@ def change_password(choose_window):
 
 	# unhide the option choosing window
 	choose_window.parent.deiconify()
+	restore_focus_to(choose_window.parent, previously_focused_widget)
 
 ################################################################################
 
@@ -1089,6 +1113,8 @@ class ChangePassword(AddPassword):
 		# change the text on the 'submit' button, which is 'Add' because of inheritance
 		# it should be 'Change' to reflect what this class is doing
 		self.submit['text'] = 'Change'
+		
+		move_to_center_of_screen(parent)
 
 	########################################
 
@@ -1152,6 +1178,7 @@ def delete_password(choose_window):
 	'''
 
 	# hide the option choosing window
+	previously_focused_widget = choose_window.parent.focus_get()
 	choose_window.parent.withdraw()
 
 	# obtain the row containing the password to be deleted
@@ -1165,6 +1192,7 @@ def delete_password(choose_window):
 
 	# unhide the option choosing window
 	choose_window.parent.deiconify()
+	restore_focus_to(choose_window.parent, previously_focused_widget)
 
 ################################################################################
 
@@ -1219,6 +1247,9 @@ class DeletePassword(BaseWindowClass):
 		# hence, row number being 6 is intentional
 		self.submit = tk.Button(parent, text = 'Delete', height = h, width = w, command = self.remove)
 		self.submit.grid(row = 6, columnspan = 2, padx = pad, pady = (pad / 2, pad))
+		
+		if self.__class__ == DeletePassword:
+			move_to_center_of_screen(parent)
 
 	########################################
 
@@ -1268,6 +1299,7 @@ def view_password(choose_window):
 	'''
 
 	# hide the option choosing window
+	previously_focused_widget = choose_window.parent.focus_get()
 	choose_window.parent.withdraw()
 
 	# obtain the row containing the password to be viewed
@@ -1275,7 +1307,7 @@ def view_password(choose_window):
 	if row_of_interest is None:
 		choose_window.parent.deiconify()
 		return
-	
+
 	# ask if it is OK to display the password on the screen
 	response = mb.askyesno('Confirmation', 'Are you sure you want the password to be displayed?', icon = 'warning', parent = choose_window.parent)
 	if response == False:
@@ -1287,6 +1319,7 @@ def view_password(choose_window):
 
 	# unhide the option choosing window
 	choose_window.parent.deiconify()
+	restore_focus_to(choose_window.parent, previously_focused_widget)
 
 ################################################################################
 
@@ -1320,6 +1353,8 @@ class ViewPassword(DeletePassword):
 		# return to main menu
 		self.submit['text'] = 'Done'
 		self.submit['command'] = self.close_button
+		
+		move_to_center_of_screen(parent)
 
 ################################################################################
 
