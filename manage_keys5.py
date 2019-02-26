@@ -11,13 +11,6 @@ import sys
 import tkinter as tk
 import tkinter.messagebox as mb
 
-# Create a new directory (folder) in an easily accessible place on your computer.
-# Place this file in that location.
-# On the first run, 'keys.csv' and 'hash' will be created automatically.
-# 'hash' stores the SHA-512 of your passphrase and a hint for the passphrase.
-# 'keys.csv' stores the your passwords after they have been encrypted with AES256.
-# Do not, under any circumstances, modify 'hash' or 'keys.csv' by hand!
-
 ################################################################################
 
 # some settings
@@ -150,32 +143,32 @@ def move_to_center_of_screen(win):
 	x = (screenwidth - windowwidth) / 2
 	y = (screenheight - windowheight) / 2
 	Getting 'windowwidth' and 'windowheight' is not straightforward.
-	
+
 	winfo_width() = width of 'win' excluding outer frame
 	winfo_rootx() = x-coordinate of top left point of 'win'
 	winfo_x()     = x-coordinate of top left point of 'win' excluding outer frame
 	w_form        = width of this above-mentioned frame
 	w             = total effective width of 'win'
-	
+
 	winfo_height() = height of 'win' excluding title bar (top) and outer frame (bottom)
 	winfo_rooty()  = y-coordinate of top left point of 'win'
 	winfo_y()      = y-coordinate of top left point of 'win' excluding title bar
 	h              = total effecive height of 'win'
-	
+
 	The 'geometry' method requires the size of 'win' excluding outer frame along with the coordinates of the top left point of 'win'.
-	
+
 	https://stackoverflow.com/questions/3352918
 	'''
-	
+
 	# update and get size of the window without outer frame
 	win.update()
 	w_req, h_req = win.winfo_width(), win.winfo_height()
-	
+
 	# calculate actual width and height of the window
 	w_form = win.winfo_rootx() - win.winfo_x()
 	w = w_req + 2 * w_form
 	h = h_req + win.winfo_rooty() - win.winfo_y() + w_form
-	
+
 	# place the window in the centre
 	# point to note: it appears that this can be used only once
 	# if a class uses this, then its child class does not get centred on using this
@@ -334,7 +327,7 @@ class Login(BaseWindowClass):
 		# check if password is correct and proceed
 		self.submit = tk.Button(parent, text = 'Log In', height = h, width = w, command = self.validate_phrase)
 		self.submit.grid(row = 4, columnspan = 2, padx = pad, pady = (pad / 4, pad))
-		
+
 		move_to_center_of_screen(parent)
 
 	########################################
@@ -439,7 +432,7 @@ class Choose(BaseWindowClass):
 		# change passphrase button
 		cpp_button = tk.Button(parent, text = 'Change Passphrase', height = h, width = w, command = lambda : change_passphrase(self))
 		cpp_button.grid(row = 4, columnspan = 2, padx = pad, pady = (pad / 4, pad))
-		
+
 		move_to_center_of_screen(parent)
 
 	########################################
@@ -556,7 +549,7 @@ class AddPassword(BaseWindowClass):
 		cpass_button = tk.Button(parent, text = 'Confirm Password', font = subtitlefont, command = lambda : show_pass(self.cp_entry))
 		cpass_button.grid(row = 7, column = 0, padx = pad, pady = (pad / 4, pad / 2))
 		CreateTooltip(cpass_button, 'Show or hide password')
-		
+
 		if self.__class__ == AddPassword:
 			move_to_center_of_screen(parent)
 
@@ -741,7 +734,7 @@ class ChangePassphrase(BaseWindowClass):
 		cp_button = tk.Button(parent, text = 'Confirm Passphrase', font = subtitlefont, command = lambda : show_pass(self.cp_entry))
 		cp_button.grid(row = 3, column = 0, padx = pad, pady = pad / 4)
 		CreateTooltip(cp_button, 'Show or hide passphrase')
-		
+
 		move_to_center_of_screen(parent)
 
 	########################################
@@ -926,7 +919,7 @@ class Search(BaseWindowClass):
 		# choose the radio button selected
 		self.submit = tk.Button(parent, text = 'Select', height = h, width = w, command = self.set_row)
 		self.submit.grid(row = 2, padx = pad, pady = (pad / 2, pad))
-		
+
 		move_to_center_of_screen(parent)
 
 	########################################
@@ -1113,7 +1106,7 @@ class ChangePassword(AddPassword):
 		# change the text on the 'submit' button, which is 'Add' because of inheritance
 		# it should be 'Change' to reflect what this class is doing
 		self.submit['text'] = 'Change'
-		
+
 		move_to_center_of_screen(parent)
 
 	########################################
@@ -1247,7 +1240,7 @@ class DeletePassword(BaseWindowClass):
 		# hence, row number being 6 is intentional
 		self.submit = tk.Button(parent, text = 'Delete', height = h, width = w, command = self.remove)
 		self.submit.grid(row = 6, columnspan = 2, padx = pad, pady = (pad / 2, pad))
-		
+
 		if self.__class__ == DeletePassword:
 			move_to_center_of_screen(parent)
 
@@ -1353,7 +1346,7 @@ class ViewPassword(DeletePassword):
 		# return to main menu
 		self.submit['text'] = 'Done'
 		self.submit['command'] = self.close_button
-		
+
 		move_to_center_of_screen(parent)
 
 ################################################################################
