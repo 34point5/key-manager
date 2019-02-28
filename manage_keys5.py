@@ -197,7 +197,7 @@ def proxy(choose_object, handle_code):
 	key = choose_object.key
 	previously_focused_widget = parent.focus_get()
 	parent.withdraw()
-	handlers[handle_code](parent, key)
+	handlers[handle_code](key)
 	parent.deiconify()
 	restore_focus_to(parent, previously_focused_widget)
 
@@ -466,18 +466,18 @@ class Choose(BaseWindowClass):
 
 ################################################################################
 
-def add_password(parent, key):
+def add_password(key):
 	'''
 	Wrapper function to instantiate 'AddPassword' class.
 
 	Args:
-		choose_window: the 'Choose' object whose window has to be hidden before displaying a new window
+		key: AES key used to encrypt password
 
 	Returns:
 		None
 	'''
 
-	adder = tk.Toplevel(parent)
+	adder = tk.Toplevel()
 	adder_object = AddPassword(adder, key)
 	adder.mainloop()
 
