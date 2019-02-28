@@ -21,6 +21,7 @@ phraselength = 1 # minimum passphrase length required while changing passphrase
 pad = 30 # the padding used for tkinter widgets
 h, w = 2, 20 # main button sizes
 system = sys.platform # operating system
+# handlers = [add_password, delete_password, change_password, view_password, change_passphrase] # available actions
 
 ################################################################################
 
@@ -176,6 +177,29 @@ def move_to_center_of_screen(win):
 	x = (win.winfo_screenwidth() - w) // 2
 	y = (win.winfo_screenheight() - h) // 2
 	win.geometry('{}x{}+{}+{}'.format(w_req, h_req, x, y))
+
+################################################################################
+
+def proxy(choose_object, handle_code):
+	'''
+	Hide the window of 'Choose' class.
+	Call the function corresponding to the button clicked in 'Choose'.
+
+	Args:
+		choose_object: 'Choose' class object, required to get its window name and AES key
+		handle_code: int which indicates which action to perform
+
+	Returns:
+		None
+	'''
+
+	parent = choose_object.parent
+	key = choose_object.key
+	previously_focused_widget = parent.focus_get()
+	parent.withdraw()
+	handlers[handle_code](parent, key)
+	parent.deiconify()
+	restore_focus_to(parent, previously_focused_widget)
 
 ################################################################################
 
@@ -414,7 +438,7 @@ class Choose(BaseWindowClass):
 		inst_label.grid(row = 1, columnspan = 2, padx = pad, pady = (pad / 4, pad / 2))
 
 		# add password
-		add_button = tk.Button(parent, text = 'Add a Password', height = h, width = w, command = lambda : add_password(self))
+		add_button = tk.Button(parent, text = 'Add a Password', height = h, width = w, command = lambda : proxy(self, 0))
 		add_button.grid(row = 2, column = 0, padx = pad, pady = (pad / 2, pad / 4))
 
 		# delete button
@@ -442,7 +466,7 @@ class Choose(BaseWindowClass):
 
 ################################################################################
 
-def add_password(choose_window):
+def add_password(parent, key):
 	'''
 	Wrapper function to instantiate 'AddPassword' class.
 
@@ -453,17 +477,9 @@ def add_password(choose_window):
 		None
 	'''
 
-	# hide the option choosing window
-	previously_focused_widget = choose_window.parent.focus_get()
-	choose_window.parent.withdraw()
-
-	adder = tk.Toplevel(choose_window.parent)
-	adder_object = AddPassword(adder, choose_window.key)
+	adder = tk.Toplevel(parent)
+	adder_object = AddPassword(adder, key)
 	adder.mainloop()
-
-	# unhide the option choosing window
-	choose_window.parent.deiconify()
-	restore_focus_to(choose_window.parent, previously_focused_widget)
 
 ################################################################################
 
@@ -1404,6 +1420,7 @@ def handle_missing_files(hash_exists, keys_exists):
 ################################################################################
 
 if __name__ == '__main__':
+	handlers = [add_password, delete_password, change_password, view_password, change_passphrase] # available actions
 
 	# take care of the possibility of 'hash' or 'keys.csv' being missing
 	handle_missing_files(os.path.isfile('hash'), os.path.isfile('keys.csv'))
