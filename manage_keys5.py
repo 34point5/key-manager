@@ -17,11 +17,10 @@ import tkinter.messagebox as mb
 titlefont = ('', 15, 'bold') # window head label font
 subtitlefont = ('', 10, 'bold') # font used by label associated with an Entry
 passlength = 18 # length of the random password generated
-phraselength = 1 # minimum passphrase length required while changing passphrase
+phraselength = 0 # minimum passphrase length required while changing passphrase
 pad = 30 # the padding used for tkinter widgets
 h, w = 2, 20 # main button sizes
 system = sys.platform # operating system
-# handlers = [add_password, delete_password, change_password, view_password, change_passphrase] # available actions
 
 ################################################################################
 
@@ -117,8 +116,8 @@ def restore_focus_to(window, widget = None):
 	Because it has been closed! In which case, this function should do nothing.
 
 	Args:
-		window: the window which has to be brought into focus
-		widget: the widget within 'window' which will be focused (if provided)
+		window: window which has to be brought into focus
+		widget: a widget within 'window' which will be focused (if provided)
 
 	Returns:
 		None
@@ -143,7 +142,7 @@ def move_to_center_of_screen(win):
 	Coordinates of top left corner of 'win' will be (X, Y).
 	x = (screenwidth - windowwidth) / 2
 	y = (screenheight - windowheight) / 2
-	Getting 'windowwidth' and 'windowheight' is not straightforward.
+	Getting 'windowwidth' and 'windowheight' is not trivial.
 
 	winfo_width() = width of 'win' excluding outer frame
 	winfo_rootx() = x-coordinate of top left point of 'win'
@@ -184,22 +183,34 @@ def proxy(choose_object, handle_code):
 	'''
 	Hide the window of 'Choose' class.
 	Call the function corresponding to the button clicked in 'Choose'.
+	If the user clicked 'Change Passphrase', update the 'key' attribute of 'Choose'.
+	Because the AES key, 'key', changes when the passphrase is changed.
+	'handlers' is a list of functions, and 'handle_code' is an index.
 
 	Args:
-		choose_object: 'Choose' class object, required to get its window name and AES key
-		handle_code: int which indicates which action to perform
+		choose_object: 'Choose' class object (it is used to get 'key', the AES key)
+		handle_code: int which indicates which function in the list 'handlers' has to be called
 
 	Returns:
 		None
 	'''
 
+	# find out which widget had focus before hiding the window
 	parent = choose_object.parent
-	key = choose_object.key
 	previously_focused_widget = parent.focus_get()
 	parent.withdraw()
-	handlers[handle_code](key)
+
+	# call the appropriate function, then make the hidden window visible again
+	key = choose_object.key
+	updated_key = handlers[handle_code](key) # return value useful only when handle_code == 4
 	parent.deiconify()
 	restore_focus_to(parent, previously_focused_widget)
+
+	# if the function which was called was 'change_passphrase', the AES key ('key') has to be updated
+	# it has been returned by the function in 'updated_key'
+	# no function other than 'change_passphrase' returns a value
+	if handle_code == 4:
+		choose_object.key = updated_key
 
 ################################################################################
 
@@ -442,19 +453,19 @@ class Choose(BaseWindowClass):
 		add_button.grid(row = 2, column = 0, padx = pad, pady = (pad / 2, pad / 4))
 
 		# delete button
-		del_button = tk.Button(parent, text = 'Delete a Password', height = h, width = w, command = lambda : delete_password(self))
+		del_button = tk.Button(parent, text = 'Delete a Password', height = h, width = w, command = lambda : proxy(self, 1))
 		del_button.grid(row = 2, column = 1, padx = pad, pady = (pad / 2, pad / 4))
 
 		# change password button
-		cpw_button = tk.Button(parent, text = 'Change a Password', height = h, width = w, command = lambda : change_password(self))
+		cpw_button = tk.Button(parent, text = 'Change a Password', height = h, width = w, command = lambda : proxy(self, 2))
 		cpw_button.grid(row = 3, column = 0, padx = pad, pady = pad / 4)
 
 		# view button
-		view_button = tk.Button(parent, text = 'View a Password', height = h, width = w, command = lambda : view_password(self))
+		view_button = tk.Button(parent, text = 'View a Password', height = h, width = w, command = lambda : proxy(self, 3))
 		view_button.grid(row = 3, column = 1, padx = pad, pady = pad / 4)
 
 		# change passphrase button
-		cpp_button = tk.Button(parent, text = 'Change Passphrase', height = h, width = w, command = lambda : change_passphrase(self))
+		cpp_button = tk.Button(parent, text = 'Change Passphrase', height = h, width = w, command = lambda : proxy(self, 4))
 		cpp_button.grid(row = 4, columnspan = 2, padx = pad, pady = (pad / 4, pad))
 
 		move_to_center_of_screen(parent)
@@ -670,29 +681,25 @@ class AddPassword(BaseWindowClass):
 
 ################################################################################
 
-def change_passphrase(choose_window):
+def change_passphrase(key):
 	'''
 	Wrapper function to instantiate the 'ChangePassphrase' class.
 
 	Args:
-		choose_window: the 'Choose' object whose window has to be hidden before displaying a new window
+		key: AES key used to decrypt passwords
 
 	Returns:
 		None
 	'''
 
-	# hide the option choosing window
-	previously_focused_widget = choose_window.parent.focus_get()
-	choose_window.parent.withdraw()
-
-	updater = tk.Toplevel(choose_window.parent)
-	updater_object = ChangePassphrase(updater, choose_window.key)
+	updater = tk.Toplevel()
+	updater_object = ChangePassphrase(updater, key)
 	updater.mainloop()
-	choose_window.key = updater_object.key # set the updated key
 
-	# unhide the option choosing window
-	choose_window.parent.deiconify()
-	restore_focus_to(choose_window.parent, previously_focused_widget)
+	# 'key' depends on the passphrase: when passphrase is changed, 'key' must also change
+	# send new value of 'key' back to 'proxy' function
+	# so that 'key' attribute of 'Choose' class can be updated
+	return updater_object.key
 
 ################################################################################
 
@@ -828,22 +835,21 @@ class ChangePassphrase(BaseWindowClass):
 
 ################################################################################
 
-def locate_row_of_interest(choose_window):
+def locate_row_of_interest():
 	'''
 	Helper function to change, delete or view a password.
 	Locates which line of 'keys.csv' has to be changed, deleted or viewed.
 	Instantiates 'Search' class.
 
 	Args:
-		choose_window: the 'Choose' object whose window is required to create a tk.Toplevel
+		None
 
 	Returns:
 		string (a row in 'keys.csv') which the user wants to change, delete or view (if search is performed)
 		None (if search is not performed)
 	'''
 
-	# instantiate Search class to accept a search term
-	locate = tk.Toplevel(choose_window.parent)
+	locate = tk.Toplevel()
 	locate_object = Search(locate)
 	locate.mainloop()
 
@@ -852,7 +858,6 @@ def locate_row_of_interest(choose_window):
 	chosen_row = locate_object.row_of_interest
 	if chosen_row == '':
 		return None
-
 	return chosen_row
 
 ################################################################################
@@ -1069,33 +1074,23 @@ class Search(BaseWindowClass):
 
 ################################################################################
 
-def change_password(choose_window):
+def change_password(key):
 	'''
 	Wrapper function to instantiate the 'ChangePassword' class.
 
 	Args:
-		choose_window: the 'Choose' object whose window has to be hidden before displaying a new window
+		key: AES key used to encrypt password
 
 	Returns:
 		None
 	'''
 
-	# hide the option choosing window
-	previously_focused_widget = choose_window.parent.focus_get()
-	choose_window.parent.withdraw()
-
-	# obtain the row containing the password to be changed
-	row_of_interest = locate_row_of_interest(choose_window)
+	row_of_interest = locate_row_of_interest()
 	if row_of_interest is None:
-		choose_window.parent.deiconify() # unhide the option choosing window
 		return
-	changer = tk.Toplevel(choose_window.parent)
-	changer_object = ChangePassword(changer, choose_window.key, row_of_interest)
+	changer = tk.Toplevel()
+	changer_object = ChangePassword(changer, key, row_of_interest)
 	changer.mainloop()
-
-	# unhide the option choosing window
-	choose_window.parent.deiconify()
-	restore_focus_to(choose_window.parent, previously_focused_widget)
 
 ################################################################################
 
@@ -1129,7 +1124,7 @@ class ChangePassword(AddPassword):
 
 	def add_or_change(self):
 		'''
-		Inherited from 'AddPassword', where this function adds a new line to 'keys.csv'
+		Inherited from 'AddPassword', where this function adds a new line to 'keys.csv' file.
 		In this class, it must change the line which matches 'self.row_of_interest'
 		Change it to what is provided in 'entries'.
 		Write the result to a new file. Delete the old file and rename the new one.
@@ -1175,33 +1170,23 @@ class ChangePassword(AddPassword):
 
 ################################################################################
 
-def delete_password(choose_window):
+def delete_password(key):
 	'''
 	Wrapper function to instantiate the 'DeletePassword' class.
 
 	Args:
-		choose_window: the 'Choose' object whose window has to be hidden before displaying a new window
+		key: AES key used to encrypt password (not used in this function)
 
 	Returns:
 		None
 	'''
 
-	# hide the option choosing window
-	previously_focused_widget = choose_window.parent.focus_get()
-	choose_window.parent.withdraw()
-
-	# obtain the row containing the password to be deleted
-	row_of_interest = locate_row_of_interest(choose_window)
+	row_of_interest = locate_row_of_interest()
 	if row_of_interest is None:
-		choose_window.parent.deiconify() # unhide the option choosing window
 		return
-	deleter = tk.Toplevel(choose_window.parent)
+	deleter = tk.Toplevel()
 	deleter_object = DeletePassword(deleter, row_of_interest)
 	deleter.mainloop()
-
-	# unhide the option choosing window
-	choose_window.parent.deiconify()
-	restore_focus_to(choose_window.parent, previously_focused_widget)
 
 ################################################################################
 
@@ -1296,46 +1281,33 @@ class DeletePassword(BaseWindowClass):
 
 ################################################################################
 
-def view_password(choose_window):
+def view_password(key):
 	'''
 	Wrapper function to instantiate the 'ViewPassword' class.
 
 	Args:
-		choose_window: the 'Choose' object whose window has to be hidden before displaying a new window
+		key: AES key used to decrypt password
 
 	Returns:
 		None
 	'''
 
-	# hide the option choosing window
-	previously_focused_widget = choose_window.parent.focus_get()
-	choose_window.parent.withdraw()
-
-	# obtain the row containing the password to be viewed
-	row_of_interest = locate_row_of_interest(choose_window)
+	row_of_interest = locate_row_of_interest()
 	if row_of_interest is None:
-		choose_window.parent.deiconify()
 		return
-
-	# ask if it is OK to display the password on the screen
-	response = mb.askyesno('Confirmation', 'Are you sure you want the password to be displayed?', icon = 'warning', parent = choose_window.parent)
+	response = mb.askyesno('Confirmation', 'Are you sure you want the password to be displayed?', icon = 'warning')
 	if response == False:
-		choose_window.parent.deiconify()
 		return
-	viewer = tk.Toplevel(choose_window.parent)
-	viewer_object = ViewPassword(viewer, choose_window.key, row_of_interest)
+	viewer = tk.Toplevel()
+	viewer_object = ViewPassword(viewer, key, row_of_interest)
 	viewer.mainloop()
-
-	# unhide the option choosing window
-	choose_window.parent.deiconify()
-	restore_focus_to(choose_window.parent, previously_focused_widget)
 
 ################################################################################
 
 class ViewPassword(DeletePassword):
 	'''
 	Display a password in raw form.
-	It inherits the 'DeletePassword' class, so only the self.submit behaviour needs changing.
+	It inherits the 'DeletePassword' class, so only the 'self.submit' behaviour needs changing.
 	'''
 
 	def __init__(self, parent, key, row_of_interest):
@@ -1420,7 +1392,9 @@ def handle_missing_files(hash_exists, keys_exists):
 ################################################################################
 
 if __name__ == '__main__':
-	handlers = [add_password, delete_password, change_password, view_password, change_passphrase] # available actions
+
+	# available actions
+	handlers = (add_password, delete_password, change_password, view_password, change_passphrase)
 
 	# take care of the possibility of 'hash' or 'keys.csv' being missing
 	handle_missing_files(os.path.isfile('hash'), os.path.isfile('keys.csv'))
