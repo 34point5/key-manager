@@ -288,9 +288,6 @@ class BaseWindowClass:
 		elif system == 'win32':
 			parent.iconbitmap('favicon.ico')
 
-		# always steal focus when created
-		parent.focus_force()
-
 	########################################
 
 	def close_button(self, event = None):
@@ -348,7 +345,6 @@ class Login(BaseWindowClass):
 		# passphrase prompt entry
 		self.pp_entry = tk.Entry(parent, show = '*')
 		self.pp_entry.grid(row = 2, column = 1, padx = pad, pady = pad / 2)
-		self.pp_entry.focus()
 
 		# toggle passphrase view
 		show_button = tk.Button(parent, text = 'Passphrase', font = subtitlefont, command = lambda : show_pass(self.pp_entry))
@@ -364,6 +360,7 @@ class Login(BaseWindowClass):
 		self.submit.grid(row = 4, columnspan = 2, padx = pad, pady = (pad / 4, pad))
 
 		move_to_center_of_screen(parent)
+		restore_focus_to(self.parent, self.pp_entry)
 
 	########################################
 
@@ -387,7 +384,7 @@ class Login(BaseWindowClass):
 
 		with open('hash') as hash_file:
 			hint = hash_file.readlines()[1].strip()
-			mb.showinfo('Passphrase Hint', hint, parent = self.parent)
+			mb.showinfo('Passphrase Hint', hint)
 			restore_focus_to(self.parent, self.pp_entry)
 
 	########################################
@@ -412,7 +409,7 @@ class Login(BaseWindowClass):
 		with open('hash') as hash_file:
 			expected_hash = hash_file.readline().strip()
 		if pp_hash != expected_hash:
-			mb.showerror('Wrong Passphrase', 'The passphrase entered is wrong.', parent = self.parent)
+			mb.showerror('Wrong Passphrase', 'The passphrase entered is wrong.')
 			restore_focus_to(self.parent, self.pp_entry)
 			return
 
@@ -469,6 +466,7 @@ class Choose(BaseWindowClass):
 		cpp_button.grid(row = 4, columnspan = 2, padx = pad, pady = (pad / 4, pad))
 
 		move_to_center_of_screen(parent)
+		restore_focus_to(self.parent)
 
 	########################################
 
@@ -579,6 +577,7 @@ class AddPassword(BaseWindowClass):
 
 		if self.__class__ == AddPassword:
 			move_to_center_of_screen(parent)
+			restore_focus_to(self.parent, self.acc_entry)
 
 	########################################
 
@@ -759,6 +758,7 @@ class ChangePassphrase(BaseWindowClass):
 		CreateTooltip(cp_button, 'Show or hide passphrase')
 
 		move_to_center_of_screen(parent)
+		restore_focus_to(self.parent, self.pp_entry)
 
 	########################################
 
@@ -941,8 +941,7 @@ class Search(BaseWindowClass):
 		self.submit.grid(row = 2, padx = pad, pady = (pad / 2, pad))
 
 		move_to_center_of_screen(parent)
-		self.parent.focus_force()
-		self.search_entry.focus()
+		restore_focus_to(self.parent, self.search_entry)
 
 	########################################
 
@@ -1120,6 +1119,7 @@ class ChangePassword(AddPassword):
 		self.submit['text'] = 'Change'
 
 		move_to_center_of_screen(parent)
+		restore_focus_to(self.parent, self.acc_entry)
 
 	########################################
 
@@ -1245,6 +1245,7 @@ class DeletePassword(BaseWindowClass):
 
 		if self.__class__ == DeletePassword:
 			move_to_center_of_screen(parent)
+			restore_focus_to(self.parent, self.submit)
 
 	########################################
 
@@ -1263,7 +1264,7 @@ class DeletePassword(BaseWindowClass):
 		# confirm and delete password
 		response = mb.askyesno('Confirmation', 'Delete password? This process cannot be undone.', icon = 'warning', parent = self.parent)
 		if response == False:
-			restore_focus_to(self.parent)
+			restore_focus_to(self.parent, self.submit)
 			return
 		with open('keys.csv') as password_file, open('.keys', 'w') as updated_password_file:
 			for row in password_file:
@@ -1337,6 +1338,7 @@ class ViewPassword(DeletePassword):
 		self.submit['command'] = self.close_button
 
 		move_to_center_of_screen(parent)
+		restore_focus_to(self.parent, self.submit)
 
 ################################################################################
 
@@ -1373,13 +1375,13 @@ def handle_missing_files(hash_exists, keys_exists):
 	# if it did, the first 'if' condition would have been executed
 	# so, terminate the program, because without 'hash', the contents of 'keys.csv' cannot be used
 	if os.stat('keys.csv').st_size:
-		mb.showerror('Missing File', 'The file \'hash\' is missing. It is required to log in to the application. Without it, your password file \'keys.csv\' is unusable.', parent = root)
+		mb.showerror('Missing File', 'The file \'hash\' is missing. It is required to log in to the application. Without it, your password file \'keys.csv\' is unusable.')
 		raise SystemExit(1)
 
 	# at this point, 'keys.csv' exists and is empty
 	# if 'hash' is missing, create it with the default contents
 	if not hash_exists:
-		response = mb.askyesno('First Time User?', 'The file \'hash\' is missing. It is required to log in to the application. It will be created with \'root\' as the default passphrase.', icon = 'warning', parent = root)
+		response = mb.askyesno('First Time User?', 'The file \'hash\' is missing. It is required to log in to the application. It will be created with \'root\' as the default passphrase.', icon = 'warning')
 		if response == False:
 			raise SystemExit(0)
 		with open('hash', 'w') as hash_file:
