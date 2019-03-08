@@ -907,7 +907,6 @@ class Search(BaseWindowClass):
 		# search prompt entry
 		self.search_entry = tk.Entry(topframe, textvariable = self.searchvar)
 		self.search_entry.grid(row = 2, column = 1, padx = pad, pady = (pad / 2, 0))
-		self.search_entry.focus()
 
 		# frame to contain scrollable canvas
 		middleframe = tk.Frame(parent)
@@ -942,6 +941,8 @@ class Search(BaseWindowClass):
 		self.submit.grid(row = 2, padx = pad, pady = (pad / 2, pad))
 
 		move_to_center_of_screen(parent)
+		self.parent.focus_force()
+		self.search_entry.focus()
 
 	########################################
 
