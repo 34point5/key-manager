@@ -738,6 +738,8 @@ class Search(BaseWindowClass):
 		self.rows = [] # clear the previous search results
 		i = 0 # counter to count the rows which get appended to 'self.rows'
 		self.selection.set(0) # initially, always keep the first radio button selected
+		self.canvas.xview_moveto(0) # scroll to left if not already there
+		self.canvas.yview_moveto(0) # scroll to top if not already there
 
 		# look for rows in 'keys.csv' which match the search
 		# contents of 'keys.csv' have already been loaded in 'self.everything'
